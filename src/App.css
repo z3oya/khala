@@ -17,7 +17,8 @@
   padding: 48px 24px 96px;
 }
 
-h1 {
+/* Scoped to the greet container so the chat UI owns its own button/heading styles. */
+.container h1 {
   margin: 0 0 24px;
   font-size: 2rem;
   letter-spacing: -0.02em;
@@ -43,7 +44,7 @@ h1 {
   outline-offset: -1px;
 }
 
-button {
+.container button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -58,11 +59,11 @@ button {
   background-color: #396cd8;
 }
 
-button:hover:not(:disabled) {
+.container button:hover:not(:disabled) {
   background-color: #2f57b8;
 }
 
-button:disabled {
+.container button:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -163,8 +164,8 @@ button:disabled {
   font-size: 0.9rem;
 }
 
-button svg,
-h2 svg,
+.container button svg,
+.container h2 svg,
 .error svg,
 .empty svg,
 .crash svg {
