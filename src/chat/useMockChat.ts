@@ -34,6 +34,8 @@ interface CancelToken {
   cancelled: boolean;
 }
 
+const EMPTY_QUEUE: string[] = [];
+
 function mostRecentSession(sessions: Session[]): Session {
   return sessions.reduce((a, b) => (b.updatedAtMs > a.updatedAtMs ? b : a));
 }
@@ -45,6 +47,9 @@ export function useMockChat() {
   // Session.status mirrors "streaming" for the sidebar markers; the two are
   // written together only via send/closeStream.
   const [streamingIds, setStreamingIds] = useState<ReadonlySet<string>>(new Set());
+  /* messages sent while streaming, dispatched head-first on idle */
+  const [queues, setQueues] = useState<Record<string, string[]>>({});
+  const [queuePaused, setQueuePaused] = useState<ReadonlySet<string>>(new Set());
 
   const tokensRef = useRef(new Map<string, CancelToken>());
   const waitersRef = useRef(new Map<string, Map<string, (d: PermissionDecision | null) => void>>());
@@ -64,6 +69,8 @@ export function useMockChat() {
   );
 
   const closeStream = useCallback((sessionId: string) => {
+    // drop the defunct token so a later send() starts a fresh run
+    tokensRef.current.delete(sessionId);
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== sessionId) return s;
@@ -180,55 +187,91 @@ export function useMockChat() {
     [patchBlock],
   );
 
-  const send = useCallback(
-    (raw: string) => {
-      const text = raw.trim();
-      if (!text) return;
-      const sessionId = activeIdRef.current;
-      if (!sessionId) return;
-      if (tokensRef.current.has(sessionId)) abortStream(sessionId);
+  const send = useCallback((raw: string) => {
+    const text = raw.trim();
+    if (!text) return;
+    const sessionId = activeIdRef.current;
+    if (!sessionId) return;
+    // Any explicit send resumes the queue drain (undoes a stop-pause).
+    setQueuePaused((prev) => {
+      if (!prev.has(sessionId)) return prev;
+      const next = new Set(prev);
+      next.delete(sessionId);
+      return next;
+    });
+    if (tokensRef.current.has(sessionId)) {
+      setQueues((prev) => ({ ...prev, [sessionId]: [...(prev[sessionId] ?? []), text] }));
+      return;
+    }
 
-      const userMsg: ChatMessage = {
-        id: uid("m"),
-        role: "user",
-        atMs: Date.now(),
-        blocks: [{ kind: "text", id: uid("b"), markdown: text }],
-      };
-      const replyId = uid("m");
-      const replyMsg: ChatMessage = {
-        id: replyId,
-        role: "assistant",
-        atMs: Date.now(),
-        blocks: [],
-        streaming: true,
-      };
+    const userMsg: ChatMessage = {
+      id: uid("m"),
+      role: "user",
+      atMs: Date.now(),
+      blocks: [{ kind: "text", id: uid("b"), markdown: text }],
+    };
+    const replyId = uid("m");
+    const replyMsg: ChatMessage = {
+      id: replyId,
+      role: "assistant",
+      atMs: Date.now(),
+      blocks: [],
+      streaming: true,
+    };
 
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          const titled = isPlaceholderTitle(s.title) ? text.slice(0, 16) : s.title;
-          return { ...s, title: titled, status: "streaming", updatedAtMs: Date.now(), messages: [...s.messages, userMsg, replyMsg] };
-        }),
-      );
-      setStreamingIds((prev) => {
-        if (prev.has(sessionId)) return prev;
-        const next = new Set(prev);
-        next.add(sessionId);
-        return next;
-      });
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id !== sessionId) return s;
+        const titled = isPlaceholderTitle(s.title) ? text.slice(0, 16) : s.title;
+        return { ...s, title: titled, status: "streaming", updatedAtMs: Date.now(), messages: [...s.messages, userMsg, replyMsg] };
+      }),
+    );
+    setStreamingIds((prev) => {
+      if (prev.has(sessionId)) return prev;
+      const next = new Set(prev);
+      next.add(sessionId);
+      return next;
+    });
 
-      const token: CancelToken = { cancelled: false };
-      tokensRef.current.set(sessionId, token);
-      waitersRef.current.set(sessionId, new Map());
+    const token: CancelToken = { cancelled: false };
+    tokensRef.current.set(sessionId, token);
+    waitersRef.current.set(sessionId, new Map());
 
-      void runScriptedReply(token, sessionId, replyId);
-    },
-    [abortStream],
-  );
+    void runScriptedReply(token, sessionId, replyId);
+  }, []);
 
+  /** Stop aborts the run and pauses the queue drain. */
   const stop = useCallback(() => {
-    abortStream(activeIdRef.current);
+    const sessionId = activeIdRef.current;
+    abortStream(sessionId);
+    setQueuePaused((prev) => {
+      if (prev.has(sessionId)) return prev;
+      const next = new Set(prev);
+      next.add(sessionId);
+      return next;
+    });
   }, [abortStream]);
+
+  const removeQueued = useCallback((sessionId: string, index: number) => {
+    setQueues((prev) => {
+      const list = prev[sessionId];
+      if (!list || index < 0 || index >= list.length) return prev;
+      const next = list.filter((_, i) => i !== index);
+      const rest = { ...prev };
+      if (next.length === 0) delete rest[sessionId];
+      else rest[sessionId] = next;
+      return rest;
+    });
+  }, []);
+
+  const resumeQueue = useCallback((sessionId: string) => {
+    setQueuePaused((prev) => {
+      if (!prev.has(sessionId)) return prev;
+      const next = new Set(prev);
+      next.delete(sessionId);
+      return next;
+    });
+  }, []);
 
   const resolvePermission = useCallback(
     (sessionId: string, messageId: string, blockId: string, decision: PermissionDecision) => {
@@ -287,6 +330,18 @@ export function useMockChat() {
   const deleteSession = useCallback(
     (id: string) => {
       abortStream(id);
+      setQueues((prev) => {
+        if (!(id in prev)) return prev;
+        const rest = { ...prev };
+        delete rest[id];
+        return rest;
+      });
+      setQueuePaused((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       const remaining = sessionsRef.current.filter((s) => s.id !== id);
       if (remaining.length === 0) {
         const fresh: Session = {
@@ -313,13 +368,34 @@ export function useMockChat() {
   }, []);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? mostRecentSession(sessions);
+  const streaming = streamingIds.has(activeSession.id);
+  const queued = queues[activeSession.id] ?? EMPTY_QUEUE;
+
+  /* Drain: dispatch the head on each idle edge; stop pauses, send or the
+   * resume button un-pauses. */
+  useEffect(() => {
+    if (streaming || queuePaused.has(activeSession.id) || queued.length === 0) return;
+    const next = queued[0];
+    setQueues((prev) => {
+      const rest = (prev[activeSession.id] ?? []).slice(1);
+      const later = { ...prev };
+      if (rest.length === 0) delete later[activeSession.id];
+      else later[activeSession.id] = rest;
+      return later;
+    });
+    send(next);
+  }, [streaming, queued, queuePaused, activeSession.id, send]);
 
   return {
     sessions,
     activeSession,
-    streaming: streamingIds.has(activeSession.id),
+    streaming,
+    queued,
+    queuePaused: queuePaused.has(activeSession.id),
     send,
     stop,
+    removeQueued,
+    resumeQueue,
     newSession,
     deleteSession,
     selectSession,

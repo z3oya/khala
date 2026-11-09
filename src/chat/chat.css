@@ -124,6 +124,8 @@
   height: 30px;
   flex: none;
   border-radius: var(--r-md);
+  transition: background-color 150ms ease-out, color 150ms ease-out,
+    border-color 150ms ease-out, opacity 150ms ease-out;
 }
 .icon-btn:hover:not(:disabled),
 .logo-toggle:hover:not(:disabled),
@@ -543,6 +545,8 @@
   background: var(--bg);
   color: var(--text-2);
   font-size: var(--fs-sm);
+  transition: background-color 150ms ease-out, color 150ms ease-out,
+    border-color 150ms ease-out, opacity 150ms ease-out;
 }
 .chip-btn:hover {
   border-color: var(--border-strong);
@@ -1168,13 +1172,57 @@
   max-width: none;
   padding: 0;
 }
-/* Light hover-float, and deliberately no focus frame: the resting
-   border/shadow stay as-is while typing (design spec). */
+/* Queued messages (sent while streaming) waiting above the composer card. */
+.composer-queue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 2px 8px;
+}
+.queue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 26px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.queue-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360px;
+}
+.queue-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.queue-chip-x:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+/* Focus deepens the border one step; no ring, no shadow change. */
 .composer {
   border: 1px solid var(--border-strong);
   border-radius: var(--r-lg);
   background: var(--bg);
   box-shadow: var(--shadow-2);
+  transition: border-color 150ms ease-out;
+}
+.composer:focus-within {
+  border-color: var(--border-focus);
 }
 .composer-input {
   display: block;
@@ -1693,7 +1741,9 @@
 .chat-empty {
   margin: auto;
   width: 100%;
-  max-width: 640px;
+  /* 808 - 48 padding = 760px content, matching the thread column exactly:
+     the first send must not shift the composer width. */
+  max-width: 808px;
   box-sizing: border-box;
   padding: 24px;
   display: flex;
@@ -1807,6 +1857,20 @@
   50% {
     opacity: 0.35;
   }
+}
+@keyframes icon-swap {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.send-icon {
+  display: inline-flex;
+  animation: icon-swap 150ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

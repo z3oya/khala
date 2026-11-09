@@ -27,8 +27,21 @@ export function ChatApp() {
 
 function ChatShell() {
   const { t } = useI18n();
-  const { sessions, activeSession, streaming, send, stop, newSession, deleteSession, selectSession, resolvePermission } =
-    useMockChat();
+  const {
+    sessions,
+    activeSession,
+    streaming,
+    queued,
+    queuePaused,
+    send,
+    stop,
+    removeQueued,
+    resumeQueue,
+    newSession,
+    deleteSession,
+    selectSession,
+    resolvePermission,
+  } = useMockChat();
   const [view, setView] = useState<View>("chat");
   const [settingsSection, setSettingsSection] = useState("general");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -107,6 +120,7 @@ function ChatShell() {
       data-streaming={streaming ? "true" : "false"}
       data-active-session={activeSession.id}
       data-message-count={activeSession.messages.length}
+      data-queue-count={queued.length}
       /* Desktop-app behavior: no native context menu; custom-menu entities
        * stopPropagation before this handler runs. */
       onContextMenu={(e) => e.preventDefault()}
@@ -148,6 +162,7 @@ function ChatShell() {
                         onStop={stop}
                         streaming={streaming}
                         centered
+                        historyKey={activeSession.id}
                       />
                     }
                     onPick={pickSuggestion}
@@ -169,6 +184,11 @@ function ChatShell() {
                       onSend={doSend}
                       onStop={stop}
                       streaming={streaming}
+                      historyKey={activeSession.id}
+                      queue={queued}
+                      onRemoveQueued={(i) => removeQueued(activeSession.id, i)}
+                      queuePaused={queuePaused}
+                      onResumeQueue={() => resumeQueue(activeSession.id)}
                     />
                   </div>
                 </>

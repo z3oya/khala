@@ -11,6 +11,7 @@
   --surface-3: #e4e4e7; /* active selection fills (sidebar active item) */
   --border: #e2e2e6; /* hairline */
   --border-strong: #cfcfd4; /* composer frame, emphasized edges */
+  --border-focus: color-mix(in srgb, var(--ink) 24%, transparent); /* composer focus frame */
   --text-3: #9b9ba1; /* placeholders, tertiary */
   --text-2: #66666c; /* secondary text */
   --text-1: #26262b; /* body text */
