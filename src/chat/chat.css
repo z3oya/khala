@@ -77,6 +77,7 @@
 }
 
 .chat-app :where(button):focus-visible,
+.chat-app :where([role="button"]):focus-visible,
 .chat-app :where(textarea):focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 1px;
@@ -208,11 +209,12 @@
   border-radius: var(--r-md);
   color: var(--text-2);
   font-size: 13.5px;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 .sb-action:hover {
-  border-color: var(--ink);
-  color: var(--ink);
-  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text-1);
+  background: var(--surface-2);
 }
 
 /* Task list: projects (by directory) + standalone chats. */
@@ -220,10 +222,23 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden; /* drag transforms must not open horizontal scroll */
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding-bottom: 8px;
+}
+.sb-scroll[data-scroll-mask="top"] {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 100%);
+}
+.sb-scroll[data-scroll-mask="bottom"] {
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+.sb-scroll[data-scroll-mask="both"] {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
 }
 .sb-zone {
   display: flex;
@@ -232,19 +247,80 @@
   border-top: 1px solid var(--border);
   padding-top: 8px;
 }
+.sb-zone-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sb-zone-head .sb-zone-label {
+  flex: 1;
+  min-width: 0;
+}
 .sb-zone-label {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 28px;
   width: 100%;
-  padding: 0 4px 6px;
-  font-size: var(--fs-sm);
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  padding: 0 4px;
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  color: var(--text-2);
+  transition: color 150ms ease-out;
 }
 .sb-zone-label:hover {
   color: var(--text-1);
+}
+.sb-zone-view-toggle {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.sb-zone-view-toggle:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.sb-zone-view-toggle[aria-pressed="true"] {
+  color: var(--text-1);
+}
+
+.sb-collapse {
+  display: grid;
+  transition: grid-template-rows 200ms ease-out, opacity 200ms ease-out;
+}
+.sb-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.sb-collapse[data-open="false"] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.sb-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sb-day-heading {
+  padding: 2px 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.sb-project-tasks {
+  min-height: 0;
+  overflow: hidden;
+  margin-left: 15px;
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .sb-zone-name {
   display: inline-flex;
@@ -304,9 +380,6 @@
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
-.sb-item.nested {
-  padding-left: 26px;
-}
 
 /* 7px hit strip; cursor only, no visual line. */
 .sb-resizer {
@@ -323,14 +396,18 @@
 }
 
 .sb-item {
+  box-sizing: border-box; /* width:100% + padding must not overflow the collapse clip */
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 10px;
+  height: 32px;
+  padding: 0 6px 0 10px;
   border-radius: var(--r-md);
   color: var(--text-1);
-  font-size: 15px;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 .sb-item:hover {
   background: var(--surface-2);
@@ -340,6 +417,13 @@
   color: var(--text-1);
   font-weight: 500;
 }
+.sb-indicator {
+  flex: none;
+  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .sb-item-title {
   flex: 1;
   min-width: 0;
@@ -348,19 +432,45 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sb-time {
+.sb-item-meta {
   flex: none;
   color: var(--text-3);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
-.sb-item.active .sb-time {
+.sb-item.active .sb-item-meta {
   color: var(--text-2);
+}
+.sb-row-del {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+.sb-item:hover .sb-row-del,
+.sb-item:focus-within .sb-row-del,
+.sb-row-del[data-confirming] {
+  opacity: 1;
+}
+.sb-row-del:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+.sb-row-del[data-confirming] {
+  color: var(--err);
+  box-shadow: inset 0 0 0 1px var(--err);
+}
+.sb-item:hover .sb-item-meta,
+.sb-item:focus-within .sb-item-meta {
+  display: none;
 }
 
 .dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   flex: none;
   border-radius: 50%;
 }
@@ -740,7 +850,7 @@
 .chev {
   flex: none;
   color: var(--text-3);
-  transition: transform 0.12s ease;
+  transition: transform 150ms ease-out;
 }
 .chev.open {
   transform: rotate(90deg);
