@@ -6,6 +6,8 @@ import { Sidebar } from "./Sidebar";
 import { MIN_SIDEBAR_WIDTH } from "./useSidebarResize";
 import { TopBar } from "./TopBar";
 import { SettingsView } from "./SettingsView";
+import { AppsView } from "./apps/AppsView";
+import { LogoToggle } from "./LogoToggle";
 import { MessageList } from "./MessageList";
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
@@ -26,7 +28,7 @@ function ChatShell() {
   const { t } = useI18n();
   const { sessions, activeSession, streaming, send, stop, newSession, deleteSession, selectSession, resolvePermission } =
     useMockChat();
-  const [view, setView] = useState<"chat" | "settings">("chat");
+  const [view, setView] = useState<"chat" | "settings" | "apps">("chat");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [sidebarDragging, setSidebarDragging] = useState(false);
@@ -54,6 +56,40 @@ function ChatShell() {
     setInput(text);
   };
 
+  /* Sidebar 'Apps' entry toggles workspace <-> apps page. */
+  const toggleApps = () => setView((v) => (v === "apps" ? "chat" : "apps"));
+  const buildInChat = () => {
+    setView("chat");
+    setInput(t("appsBuildPrompt"));
+  };
+
+  const sidebarProps = {
+    sessions,
+    activeId: activeSession.id,
+    onSelect: (id: string) => {
+      selectSession(id);
+      setView("chat");
+    },
+    onNew: () => {
+      newSession();
+      setInput("");
+      setView("chat");
+    },
+    onNewProject: (dir: string) => {
+      newSession(dir);
+      setInput("");
+      setView("chat");
+    },
+    onDeleteSession: deleteSession,
+    onOpenSettings: () => setView("settings"),
+    onOpenApps: toggleApps,
+    width: sidebarWidth,
+    collapsed: sidebarCollapsed,
+    dragging: sidebarDragging,
+    onWidth: setSidebarWidth,
+    onDragging: setSidebarDragging,
+  };
+
   return (
     <div
       className={`chat-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
@@ -75,76 +111,72 @@ function ChatShell() {
           onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
           onBack={() => setView("chat")}
         />
+      ) : view === "apps" ? (
+        <>
+          <header className="chat-topbar" data-testid="chat-topbar">
+            <LogoToggle
+              sidebarCollapsed={sidebarCollapsed}
+              onToggle={() => setSidebarCollapsed((v) => !v)}
+            />
+            <span className="topbar-title" data-testid="chat-apps-title">
+              {t("apps")}
+            </span>
+          </header>
+          <div className="chat-body">
+            <Sidebar {...sidebarProps} />
+            <AppsView onBuildInChat={buildInChat} />
+          </div>
+        </>
       ) : (
-        <TopBar
-          title={activeSession.title}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
-        />
-      )}
-
-      {view === "chat" && (
-        <div className="chat-body">
-          <Sidebar
-            sessions={sessions}
-            activeId={activeSession.id}
-            onSelect={selectSession}
-            onNew={() => {
-              newSession();
-              setInput("");
-            }}
-            onNewProject={(dir) => {
-              newSession(dir);
-              setInput("");
-            }}
-            onOpenSettings={() => setView("settings")}
-            onDeleteSession={deleteSession}
-            width={sidebarWidth}
-            collapsed={sidebarCollapsed}
-            dragging={sidebarDragging}
-            onWidth={setSidebarWidth}
-            onDragging={setSidebarDragging}
+        <>
+          <TopBar
+            title={activeSession.title}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
           />
+          <div className="chat-body">
+            <Sidebar {...sidebarProps} />
 
-          <main className="chat-main">
-            {isEmpty ? (
-              <div className="chat-empty-region">
-                <EmptyState
-                  composer={
+            <main className="chat-main">
+              {isEmpty ? (
+                <div className="chat-empty-region">
+                  <EmptyState
+                    composer={
+                      <Composer
+                        value={input}
+                        onChange={setInput}
+                        onSend={doSend}
+                        onStop={stop}
+                        streaming={streaming}
+                        centered
+                      />
+                    }
+                    onPick={pickSuggestion}
+                    suggestions={suggestions}
+                  />
+                </div>
+              ) : (
+                <>
+                  <MessageList
+                    session={activeSession}
+                    onResolvePermission={(messageId, blockId, decision) =>
+                      resolvePermission(activeSession.id, messageId, blockId, decision)
+                    }
+                  />
+                  <div className="chat-footer">
                     <Composer
                       value={input}
                       onChange={setInput}
                       onSend={doSend}
                       onStop={stop}
                       streaming={streaming}
-                      centered
                     />
-                  }
-                  onPick={pickSuggestion}
-                  suggestions={suggestions}
-                />
-              </div>
-            ) : (
-              <>
-                <MessageList
-                  session={activeSession}
-                  onResolvePermission={(messageId, blockId, decision) =>
-                    resolvePermission(activeSession.id, messageId, blockId, decision)
-                  }
-                />
-                <div className="chat-footer">
-                  <Composer
-                    value={input}
-                    onChange={setInput}
-                    onSend={doSend}
-                    onStop={stop}
-                    streaming={streaming}
-                  />
-                </div>
-              </>
-            )}
-          </main>
-        </div>
+                  </div>
+                </>
+              )}
+            </main>
+          </div>
+        </>
       )}
 
       <span className="visually-hidden" role="status" data-testid="chat-status">

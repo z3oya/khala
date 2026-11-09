@@ -17,6 +17,7 @@ interface Props {
   onNewProject: (dir: string) => void;
   onDeleteSession: (id: string) => void;
   onOpenSettings: () => void;
+  onOpenApps: () => void;
   width: number;
   collapsed: boolean;
   dragging: boolean;
@@ -40,6 +41,7 @@ export function Sidebar({
   onNewProject,
   onDeleteSession,
   onOpenSettings,
+  onOpenApps,
   width,
   collapsed,
   dragging,
@@ -159,7 +161,8 @@ export function Sidebar({
             type="button"
             className="sb-action"
             data-testid="chat-new-app"
-            title={`${t("apps")} (mock)`}
+            title={t("apps")}
+            onClick={onOpenApps}
           >
             <AppWindow size={13} />
             {t("apps")}

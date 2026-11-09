@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChatApp } from "./chat/ChatApp";
+import { AppStandalone } from "./chat/apps/AppStandalone";
 import { GreetDemo } from "./greet/GreetDemo";
 import { DebugHud } from "./components/DebugHud";
 
@@ -12,9 +13,17 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
+  const standaloneApp = hash.match(/^#\/app\/(.+)$/)?.[1];
+
   return (
     <>
-      {hash === "#/greet" ? <GreetDemo /> : <ChatApp />}
+      {standaloneApp ? (
+        <AppStandalone appId={standaloneApp} />
+      ) : hash === "#/greet" ? (
+        <GreetDemo />
+      ) : (
+        <ChatApp />
+      )}
       <DebugHud />
     </>
   );
