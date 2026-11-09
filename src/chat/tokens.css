@@ -6,7 +6,7 @@
 .chat-app {
   /* Palette: warm-white -> progressive grays -> deep gray (no pure #fff/#000). */
   --bg: #fbfbfc; /* main canvas / message area */
-  --surface: #f6f6f7; /* sidebar, code blocks, tool-card bodies */
+  --surface: #f6f6f7; /* window shell around the card, sidebar, code blocks, tool-card bodies */
   --surface-2: #efeff1; /* hover fills, secondary surfaces */
   --surface-3: #e4e4e7; /* active selection fills (sidebar active item) */
   --border: #e2e2e6; /* hairline */

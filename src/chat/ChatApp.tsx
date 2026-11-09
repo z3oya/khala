@@ -5,16 +5,17 @@ import { I18nProvider, useI18n } from "./i18n";
 import { Sidebar } from "./Sidebar";
 import { MIN_SIDEBAR_WIDTH } from "./useSidebarResize";
 import { TopBar } from "./TopBar";
-import { SettingsView } from "./SettingsView";
+import { SettingsSidebar, SettingsPanel } from "./SettingsView";
 import { AppsView } from "./apps/AppsView";
 import { LogoToggle } from "./LogoToggle";
 import { MessageList } from "./MessageList";
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
+import type { View } from "./types";
 import "./tokens.css";
 import "./chat.css";
 
-const DEFAULT_SIDEBAR_WIDTH = 264;
+const DEFAULT_SIDEBAR_WIDTH = 320;
 
 export function ChatApp() {
   return (
@@ -28,7 +29,8 @@ function ChatShell() {
   const { t } = useI18n();
   const { sessions, activeSession, streaming, send, stop, newSession, deleteSession, selectSession, resolvePermission } =
     useMockChat();
-  const [view, setView] = useState<"chat" | "settings" | "apps">("chat");
+  const [view, setView] = useState<View>("chat");
+  const [settingsSection, setSettingsSection] = useState("general");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [sidebarDragging, setSidebarDragging] = useState(false);
@@ -58,6 +60,9 @@ function ChatShell() {
 
   /* Sidebar 'Apps' entry toggles workspace <-> apps page. */
   const toggleApps = () => setView((v) => (v === "apps" ? "chat" : "apps"));
+  /* Settings is one-way per button: workspace entry opens, settings footer returns. */
+  const openSettings = () => setView("settings");
+  const closeSettings = () => setView("chat");
   const buildInChat = () => {
     setView("chat");
     setInput(t("appsBuildPrompt"));
@@ -81,7 +86,7 @@ function ChatShell() {
       setView("chat");
     },
     onDeleteSession: deleteSession,
-    onOpenSettings: () => setView("settings"),
+    onOpenSettings: openSettings,
     onOpenApps: toggleApps,
     width: sidebarWidth,
     collapsed: sidebarCollapsed,
@@ -89,6 +94,8 @@ function ChatShell() {
     onWidth: setSidebarWidth,
     onDragging: setSidebarDragging,
   };
+
+  const headerTitle = view === "apps" ? t("apps") : view === "settings" ? t("stTitle") : activeSession.title;
 
   return (
     <div
@@ -104,39 +111,31 @@ function ChatShell() {
        * stopPropagation before this handler runs. */
       onContextMenu={(e) => e.preventDefault()}
     >
-      {view === "settings" ? (
-        <SettingsView
-          sidebarWidth={sidebarWidth}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
-          onBack={() => setView("chat")}
-        />
-      ) : view === "apps" ? (
-        <>
-          <header className="chat-topbar" data-testid="chat-topbar">
-            <LogoToggle
-              sidebarCollapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed((v) => !v)}
-            />
-            <span className="topbar-title" data-testid="chat-apps-title">
-              {t("apps")}
-            </span>
-          </header>
-          <div className="chat-body">
-            <Sidebar {...sidebarProps} />
-            <AppsView onBuildInChat={buildInChat} />
-          </div>
-        </>
-      ) : (
-        <>
-          <TopBar
-            title={activeSession.title}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
-          />
-          <div className="chat-body">
-            <Sidebar {...sidebarProps} />
+      {/* DOM order matches visual position (top-left). */}
+      <div className="top-overlay">
+        <LogoToggle sidebarCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((v) => !v)} />
+      </div>
 
+      {view === "settings" ? (
+        <SettingsSidebar
+          activeId={settingsSection}
+          onSelect={setSettingsSection}
+          width={sidebarWidth}
+          collapsed={sidebarCollapsed}
+          onBack={closeSettings}
+        />
+      ) : (
+        <Sidebar {...sidebarProps} />
+      )}
+
+      <div className="main-card">
+        <TopBar view={view} title={headerTitle} />
+        <div className="card-body">
+          {view === "settings" ? (
+            <SettingsPanel activeId={settingsSection} />
+          ) : view === "apps" ? (
+            <AppsView onBuildInChat={buildInChat} />
+          ) : (
             <main className="chat-main">
               {isEmpty ? (
                 <div className="chat-empty-region">
@@ -175,9 +174,9 @@ function ChatShell() {
                 </>
               )}
             </main>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </div>
 
       <span className="visually-hidden" role="status" data-testid="chat-status">
         {streaming ? t("generating") : ""}

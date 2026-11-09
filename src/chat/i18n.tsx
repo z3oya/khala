@@ -64,7 +64,6 @@ const zh = {
   daysAgo: "{n} 天前",
   generating: "正在生成回复",
   // apps page
-  appsDesc: "来自聊天中 khala 为你构建的小应用,也可以导入 .html 应用文件。",
   appsBuildInChat: "在聊天中构建",
   appsBuildPrompt: "帮我构建一个应用:",
   appsImport: "导入应用",
@@ -184,7 +183,6 @@ const en: Dict = {
   hoursAgo: "{n}h ago",
   daysAgo: "{n}d ago",
   generating: "Generating reply",
-  appsDesc: "Small apps khala built for you in chat, plus .html apps you import.",
   appsBuildInChat: "Build in chat",
   appsBuildPrompt: "Build me an app: ",
   appsImport: "Import app",

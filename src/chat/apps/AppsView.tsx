@@ -1,4 +1,4 @@
-/* Apps page main region: header, card grid, floating fallback window,
+/* Apps page main region: actions row, card grid, floating fallback window,
  * .html import, empty state, per-card context menu. */
 import { useLayoutEffect, useRef, useState, type ChangeEvent as ReactChangeEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { FileCode2, MessageSquarePlus, Play, Upload, X } from "lucide-react";
@@ -137,10 +137,6 @@ export function AppsView({ onBuildInChat }: Props) {
     >
       <div className="apps-scroll">
         <div className="apps-head">
-          <div className="apps-head-text">
-            <h2 className="apps-title">{t("apps")}</h2>
-            <p className="apps-desc">{t("appsDesc")}</p>
-          </div>
           <div className="apps-head-actions">
             <input
               ref={fileRef}

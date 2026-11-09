@@ -7,25 +7,54 @@
 
 /* ---------- base ---------- */
 
-/* Fixed to the viewport: the thread is the only page-level scrollbar, and
- * the full-width topbar keeps the sidebar toggle put while the sidebar
- * collapses. */
+/* Fixed to the viewport; shell surface matches the sidebar. */
 .chat-app {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
+  display: flex; /* row: sidebar | main card */
   overflow: hidden;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text-1);
   font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: var(--fs-ui);
   color-scheme: light;
+
+  /* Shell geometry, shared by card / topbar / overlay / collapsed topbar. */
+  --card-inset: 4px;
+  --card-border-w: 1px;
+  --topbar-h: 48px;
+  --overlay-left: 12px; /* sidebar's 12px content gutter */
+  --overlay-clear: 44px; /* overlay-left + 30px logo + 2px */
 }
-.chat-body {
+
+.main-card {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: var(--card-inset);
+  background: var(--bg);
+  border: var(--card-border-w) solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.card-body {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+}
+
+/* Floating top-left toggle; band mirrors the topbar. */
+.top-overlay {
+  position: absolute;
+  top: calc(var(--card-inset) + var(--card-border-w));
+  left: var(--overlay-left);
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  z-index: 20;
 }
 
 /* Reset App.css's legacy global button rules inside this subtree; :where()
@@ -112,25 +141,20 @@
 .chat-sidebar {
   position: relative;
   flex: none;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
   overflow: hidden;
   transition: width 0.16s ease;
 }
 .chat-sidebar.dragging {
   transition: none;
 }
-.chat-app.sidebar-collapsed .chat-sidebar {
-  border-right-width: 0;
-}
 .chat-sidebar-inner {
   width: 100%;
-  min-width: 208px;
+  min-width: 260px;
   height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 12px 12px 0;
+  padding: calc(var(--card-inset) + var(--card-border-w) + var(--topbar-h) + 8px) 12px 0; /* clears the toggle band + 8px gap */
 }
 
 /* Logo morph toggle: the mark rests; hover/focus crossfades to PanelLeft. */
@@ -284,6 +308,7 @@
   padding-left: 26px;
 }
 
+/* 7px hit strip; cursor only, no visual line. */
 .sb-resizer {
   position: absolute;
   top: 0;
@@ -292,22 +317,6 @@
   height: 100%;
   z-index: 10;
   cursor: col-resize;
-}
-.sb-resizer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 2px;
-  width: 1px;
-  background: transparent;
-}
-.chat-sidebar:hover .sb-resizer::after {
-  background: var(--border-strong);
-}
-.sb-resizer:hover::after,
-.chat-sidebar.dragging .sb-resizer::after {
-  background: var(--ink);
 }
 .chat-app.sidebar-collapsed .sb-resizer {
   display: none;
@@ -380,19 +389,23 @@
 .chat-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
 }
 
 .chat-topbar {
-  height: 52px;
+  box-sizing: border-box; /* band includes its bottom border */
+  height: var(--topbar-h);
   flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
+}
+.chat-app.sidebar-collapsed .chat-topbar {
+  padding-left: var(--overlay-clear); /* clears the floating toggle on the card corner */
 }
 .topbar-title {
   min-width: 0;
@@ -1228,6 +1241,7 @@
   position: relative;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: hidden; /* floating window clips here; the column scrolls inside */
   display: flex;
   flex-direction: column;
@@ -1242,23 +1256,9 @@
 .apps-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end; /* page title lives in the card topbar */
   gap: 16px;
   margin-bottom: 18px;
-}
-.apps-head-text {
-  min-width: 0;
-}
-.apps-title {
-  margin: 0 0 4px;
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.apps-desc {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--text-2);
 }
 .apps-head-actions {
   display: flex;

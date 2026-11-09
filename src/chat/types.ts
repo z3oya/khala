@@ -8,6 +8,9 @@ export type ToolStatus = "running" | "done" | "error";
 export type SessionStatus = "idle" | "streaming" | "error" | "unread";
 export type PermissionDecision = "allowOnce" | "alwaysAllow" | "deny";
 
+/** Main-frame views switched by the shell (chat-root[data-view]). */
+export type View = "chat" | "settings" | "apps";
+
 export interface DiffLine {
   kind: "equal" | "add" | "del";
   oldLine?: number;
