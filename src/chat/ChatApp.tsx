@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useMockChat } from "./useMockChat";
 import { I18nProvider, useI18n } from "./i18n";
-import { Sidebar } from "./Sidebar";
+import { TaskSidebar } from "./sidebar/TaskSidebar";
+import { useTaskSidebarPrefs } from "./sidebar/useTaskSidebarPrefs";
 import { MIN_SIDEBAR_WIDTH } from "./useSidebarResize";
 import { TopBar } from "./TopBar";
 import { SettingsSidebar, SettingsPanel } from "./SettingsView";
@@ -15,7 +16,7 @@ import type { View } from "./types";
 import "./tokens.css";
 import "./chat.css";
 
-const DEFAULT_SIDEBAR_WIDTH = 320;
+const DEFAULT_SIDEBAR_WIDTH = 264;
 
 export function ChatApp() {
   return (
@@ -29,6 +30,10 @@ function ChatShell() {
   const { t } = useI18n();
   const {
     sessions,
+    projects,
+    groups,
+    archivedSessions,
+    draft,
     activeSession,
     streaming,
     queued,
@@ -37,11 +42,20 @@ function ChatShell() {
     stop,
     removeQueued,
     resumeQueue,
-    newSession,
+    newTask,
+    updateDraftText,
     deleteSession,
     selectSession,
     resolvePermission,
+    togglePin,
+    setArchived,
+    renameSession,
+    markUnread,
+    saveProject,
+    deleteProject,
+    toggleProjectPin,
   } = useMockChat();
+  const { prefs, update, setView: setSidebarView, setExpanded, toggleGroupCollapsed } = useTaskSidebarPrefs();
   const [view, setView] = useState<View>("chat");
   const [settingsSection, setSettingsSection] = useState("general");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -59,16 +73,20 @@ function ChatShell() {
     return () => window.removeEventListener("resize", clamp);
   }, []);
 
-  const isEmpty = activeSession.messages.length === 0;
+  const isDraft = activeSession === null;
+  const isEmpty = isDraft || activeSession.messages.length === 0;
   const suggestions = t("suggestions");
 
+  const composerValue = isDraft ? (draft?.text ?? "") : input;
+  const setComposerValue = (v: string) => (isDraft ? updateDraftText(v) : setInput(v));
+
   const doSend = () => {
-    send(input);
+    send(composerValue);
     setInput("");
   };
 
   const pickSuggestion = (text: string) => {
-    setInput(text);
+    setComposerValue(text);
   };
 
   /* Sidebar 'Apps' entry toggles workspace <-> apps page. */
@@ -78,27 +96,51 @@ function ChatShell() {
   const closeSettings = () => setView("chat");
   const buildInChat = () => {
     setView("chat");
-    setInput(t("appsBuildPrompt"));
+    setComposerValue(t("appsBuildPrompt"));
   };
+
+  /* Ctrl/Cmd+N starts (or returns to) the draft. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        newTask();
+        setView("chat");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [newTask]);
 
   const sidebarProps = {
     sessions,
-    activeId: activeSession.id,
-    onSelect: (id: string) => {
-      selectSession(id);
+    projects,
+    groups,
+    draft,
+    activeId: activeSession?.id ?? null,
+    prefs,
+    onPrefsChange: update,
+    setView: setSidebarView,
+    setExpanded,
+    toggleGroupCollapsed,
+    onSelect: (id: string, unreadAtMs?: number) => {
+      selectSession(id, unreadAtMs);
       setView("chat");
     },
-    onNew: () => {
-      newSession();
-      setInput("");
-      setView("chat");
-    },
-    onNewProject: (dir: string) => {
-      newSession(dir);
+    onSelectDraft: () => setView("chat"),
+    onNewTask: (projectId?: string, groupId?: string) => {
+      newTask(projectId, groupId);
       setInput("");
       setView("chat");
     },
     onDeleteSession: deleteSession,
+    onTogglePin: togglePin,
+    onArchive: (id: string) => setArchived(id, true),
+    onRenameSession: renameSession,
+    onMarkUnread: markUnread,
+    onSaveProject: saveProject,
+    onDeleteProject: deleteProject,
+    onToggleProjectPin: toggleProjectPin,
     onOpenSettings: openSettings,
     onOpenApps: toggleApps,
     width: sidebarWidth,
@@ -108,7 +150,7 @@ function ChatShell() {
     onDragging: setSidebarDragging,
   };
 
-  const headerTitle = view === "apps" ? t("apps") : view === "settings" ? t("stTitle") : activeSession.title;
+  const headerTitle = view === "apps" ? t("apps") : view === "settings" ? t("stTitle") : isDraft ? t("newTask") : activeSession.title;
 
   return (
     <div
@@ -117,9 +159,10 @@ function ChatShell() {
       data-view={view}
       data-sidebar={sidebarCollapsed ? "collapsed" : "open"}
       data-sidebar-width={sidebarCollapsed ? 0 : Math.round(sidebarWidth)}
+      data-sidebar-view={prefs.view}
       data-streaming={streaming ? "true" : "false"}
-      data-active-session={activeSession.id}
-      data-message-count={activeSession.messages.length}
+      data-active-session={activeSession?.id ?? ""}
+      data-message-count={activeSession?.messages.length ?? 0}
       data-queue-count={queued.length}
       /* Desktop-app behavior: no native context menu; custom-menu entities
        * stopPropagation before this handler runs. */
@@ -139,14 +182,19 @@ function ChatShell() {
           onBack={closeSettings}
         />
       ) : (
-        <Sidebar {...sidebarProps} />
+        <TaskSidebar {...sidebarProps} />
       )}
 
       <div className="main-card">
         <TopBar view={view} title={headerTitle} />
         <div className="card-body">
           {view === "settings" ? (
-            <SettingsPanel activeId={settingsSection} />
+            <SettingsPanel
+              activeId={settingsSection}
+              archived={archivedSessions}
+              onRestoreArchive={(id) => setArchived(id, false)}
+              onDeleteArchive={deleteSession}
+            />
           ) : view === "apps" ? (
             <AppsView onBuildInChat={buildInChat} />
           ) : (
@@ -156,13 +204,13 @@ function ChatShell() {
                   <EmptyState
                     composer={
                       <Composer
-                        value={input}
-                        onChange={setInput}
+                        value={composerValue}
+                        onChange={setComposerValue}
                         onSend={doSend}
                         onStop={stop}
                         streaming={streaming}
                         centered
-                        historyKey={activeSession.id}
+                        historyKey={activeSession?.id ?? "draft"}
                       />
                     }
                     onPick={pickSuggestion}
@@ -170,28 +218,30 @@ function ChatShell() {
                   />
                 </div>
               ) : (
-                <>
-                  <MessageList
-                    session={activeSession}
-                    onResolvePermission={(messageId, blockId, decision) =>
-                      resolvePermission(activeSession.id, messageId, blockId, decision)
-                    }
-                  />
-                  <div className="chat-footer">
-                    <Composer
-                      value={input}
-                      onChange={setInput}
-                      onSend={doSend}
-                      onStop={stop}
-                      streaming={streaming}
-                      historyKey={activeSession.id}
-                      queue={queued}
-                      onRemoveQueued={(i) => removeQueued(activeSession.id, i)}
-                      queuePaused={queuePaused}
-                      onResumeQueue={() => resumeQueue(activeSession.id)}
+                activeSession !== null && (
+                  <>
+                    <MessageList
+                      session={activeSession}
+                      onResolvePermission={(messageId, blockId, decision) =>
+                        resolvePermission(activeSession.id, messageId, blockId, decision)
+                      }
                     />
-                  </div>
-                </>
+                    <div className="chat-footer">
+                      <Composer
+                        value={composerValue}
+                        onChange={setComposerValue}
+                        onSend={doSend}
+                        onStop={stop}
+                        streaming={streaming}
+                        historyKey={activeSession.id}
+                        queue={queued}
+                        onRemoveQueued={(i) => removeQueued(activeSession.id, i)}
+                        queuePaused={queuePaused}
+                        onResumeQueue={() => resumeQueue(activeSession.id)}
+                      />
+                    </div>
+                  </>
+                )
               )}
             </main>
           )}

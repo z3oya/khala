@@ -5,11 +5,35 @@
  */
 
 export type ToolStatus = "running" | "done" | "error";
-export type SessionStatus = "idle" | "streaming" | "error" | "unread";
+/** Runtime stream state; "unread" moved to Session.unreadAtMs (timestamp). */
+export type SessionStatus = "idle" | "streaming" | "error";
 export type PermissionDecision = "allowOnce" | "alwaysAllow" | "deny";
 
 /** Main-frame views switched by the shell (chat-root[data-view]). */
 export type View = "chat" | "settings" | "apps";
+
+/** Virtual project grouping tasks (mirrors khala-core's future project DTO). */
+export interface Project {
+  id: string;
+  name: string;
+  path?: string;
+  pinned: boolean;
+  createdAtMs: number;
+}
+
+export type GroupColor = "gray" | "red" | "orange" | "yellow" | "green" | "blue" | "purple";
+
+export interface TaskGroup {
+  id: string;
+  name: string;
+  color: GroupColor;
+}
+
+export interface ChangeSummary {
+  fileCount: number;
+  added: number;
+  removed: number;
+}
 
 export interface DiffLine {
   kind: "equal" | "add" | "del";
@@ -80,17 +104,27 @@ export interface ChatMessage {
   streaming?: boolean;
 }
 
-export type SessionKind = "chat" | "project";
-
 export interface Session {
   id: string;
   title: string;
-  kind: SessionKind;
-  /** project sessions only; mirror (kind, dir) as a tagged enum in khala-core. */
-  dir?: string;
+  /** Set by manual rename so an auto-title never clobbers it. */
+  titleOverridden?: boolean;
+  projectId?: string;
+  groupId?: string;
+  pinned: boolean;
+  archived: boolean;
+  /** Unread marker; cleared on select via expected-value compare. */
+  unreadAtMs?: number;
+  changeSummary?: ChangeSummary;
   status: SessionStatus;
   updatedAtMs: number;
   messages: ChatMessage[];
+}
+
+export interface Draft {
+  projectId?: string;
+  groupId?: string;
+  text: string;
 }
 
 export function diffStats(hunks: DiffHunk[]): { add: number; del: number } {

@@ -37,6 +37,13 @@
   --r-md: 8px; /* buttons, inputs */
   --r-lg: 10px; /* tool cards, composer, code blocks, user bubble */
 
+  /* Task-list semantics (ZCodium mapping): hover/selection tints reuse the
+     gray ramp; unread keeps a sky dot while the brand stays monochrome. */
+  --surface-hover: var(--surface-2); /* 5% ink equivalent */
+  --selected: var(--surface-3); /* 10% ink equivalent */
+  --dot-unread: #0ea5e9;
+  --tag: rgba(23, 23, 28, 0.06); /* count badges, kbd chips */
+
   /* Type */
   --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
   --fs-ui: 14px;

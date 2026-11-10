@@ -3,17 +3,22 @@
  * streaming. `?mock=instant` collapses every delay for deterministic E2E.
  * Each streaming session owns a CancelToken and a permission-waiter map;
  * aborting resolves the waiters with null so the script coroutine unwinds.
+ *
+ * newTask() drafts become sessions only on first send.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { initialSessions } from "./mockData";
-import { isPlaceholderTitle, placeholderTitle, useI18n } from "./i18n";
+import { initialGroups, initialProjects, initialSessions } from "./mockData";
 import type {
   ChatMessage,
   ContentBlock,
+  Draft,
   PermissionDecision,
+  Project,
   Session,
+  TaskGroup,
   ToolCallBlock,
 } from "./types";
+import { diffStats } from "./types";
 
 const INSTANT = new URLSearchParams(window.location.search).get("mock") === "instant";
 
@@ -36,14 +41,16 @@ interface CancelToken {
 
 const EMPTY_QUEUE: string[] = [];
 
-function mostRecentSession(sessions: Session[]): Session {
-  return sessions.reduce((a, b) => (b.updatedAtMs > a.updatedAtMs ? b : a));
+function mostRecentSession(sessions: Session[]): Session | undefined {
+  return sessions.reduce<Session | undefined>((a, b) => (!a || b.updatedAtMs > a.updatedAtMs ? b : a), undefined);
 }
 
 export function useMockChat() {
-  const { lang } = useI18n();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [activeId, setActiveId] = useState(initialSessions[0].id);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  /* activeId === null implies draft !== null. */
+  const [activeId, setActiveId] = useState<string | null>(initialSessions[0].id);
+  const [draft, setDraft] = useState<Draft | null>(null);
   // Session.status mirrors "streaming" for the sidebar markers; the two are
   // written together only via send/closeStream.
   const [streamingIds, setStreamingIds] = useState<ReadonlySet<string>>(new Set());
@@ -57,6 +64,14 @@ export function useMockChat() {
   activeIdRef.current = activeId;
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  /** activeId === null must imply draft !== null. */
+  const activateDraft = useCallback((seed?: Draft) => {
+    setDraft((prev) => prev ?? seed ?? { text: "" });
+    setActiveId(null);
+  }, []);
 
   useEffect(
     () => () => {
@@ -71,12 +86,15 @@ export function useMockChat() {
   const closeStream = useCallback((sessionId: string) => {
     // drop the defunct token so a later send() starts a fresh run
     tokensRef.current.delete(sessionId);
+    // Background completions land as an unread timestamp.
+    const backgrounded = sessionId !== activeIdRef.current;
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== sessionId) return s;
         return {
           ...s,
           status: "idle",
+          ...(backgrounded && !s.archived ? { unreadAtMs: Date.now() } : {}),
           messages: s.messages.map((m) =>
             m.streaming
               ? {
@@ -187,21 +205,24 @@ export function useMockChat() {
     [patchBlock],
   );
 
+  /** First send on a draft commits it as a session (ZCodium draft lifecycle);
+   * the title comes from the message text like every first reply. */
   const send = useCallback((raw: string) => {
     const text = raw.trim();
     if (!text) return;
-    const sessionId = activeIdRef.current;
-    if (!sessionId) return;
     // Any explicit send resumes the queue drain (undoes a stop-pause).
-    setQueuePaused((prev) => {
-      if (!prev.has(sessionId)) return prev;
-      const next = new Set(prev);
-      next.delete(sessionId);
-      return next;
-    });
-    if (tokensRef.current.has(sessionId)) {
-      setQueues((prev) => ({ ...prev, [sessionId]: [...(prev[sessionId] ?? []), text] }));
-      return;
+    const targetId = activeIdRef.current;
+    if (targetId !== null) {
+      setQueuePaused((prev) => {
+        if (!prev.has(targetId)) return prev;
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+      if (tokensRef.current.has(targetId)) {
+        setQueues((prev) => ({ ...prev, [targetId]: [...(prev[targetId] ?? []), text] }));
+        return;
+      }
     }
 
     const userMsg: ChatMessage = {
@@ -219,13 +240,35 @@ export function useMockChat() {
       streaming: true,
     };
 
-    setSessions((prev) =>
-      prev.map((s) => {
-        if (s.id !== sessionId) return s;
-        const titled = isPlaceholderTitle(s.title) ? text.slice(0, 16) : s.title;
-        return { ...s, title: titled, status: "streaming", updatedAtMs: Date.now(), messages: [...s.messages, userMsg, replyMsg] };
-      }),
-    );
+    let sessionId = targetId;
+    if (sessionId === null) {
+      const d = draftRef.current;
+      if (!d) return;
+      const created: Session = {
+        id: uid("s"),
+        title: text.slice(0, 16),
+        pinned: false,
+        archived: false,
+        status: "streaming",
+        updatedAtMs: Date.now(),
+        messages: [userMsg, replyMsg],
+        ...(d.projectId ? { projectId: d.projectId } : {}),
+        ...(d.groupId ? { groupId: d.groupId } : {}),
+      };
+      sessionId = created.id;
+      setSessions((prev) => [created, ...prev]);
+      setDraft(null);
+      setActiveId(created.id);
+    } else {
+      const id = sessionId;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, status: "streaming", updatedAtMs: Date.now(), messages: [...s.messages, userMsg, replyMsg] }
+            : s,
+        ),
+      );
+    }
     setStreamingIds((prev) => {
       if (prev.has(sessionId)) return prev;
       const next = new Set(prev);
@@ -243,6 +286,7 @@ export function useMockChat() {
   /** Stop aborts the run and pauses the queue drain. */
   const stop = useCallback(() => {
     const sessionId = activeIdRef.current;
+    if (!sessionId) return;
     abortStream(sessionId);
     setQueuePaused((prev) => {
       if (prev.has(sessionId)) return prev;
@@ -287,46 +331,21 @@ export function useMockChat() {
     [patchBlock],
   );
 
-  /** New session (project when dir given); reuses an equivalent empty
-   * placeholder instead of stacking. */
-  const newSession = useCallback(
-    (dir?: string) => {
-      const existing = sessions.find(
-        (s) =>
-          isPlaceholderTitle(s.title) &&
-          s.messages.length === 0 &&
-          (dir ? s.kind === "project" && s.dir === dir : s.kind === "chat"),
-      );
-      if (existing) {
-        setActiveId(existing.id);
-        return existing.id;
-      }
-      const id = uid("s");
-      setSessions((prev) => {
-        let n = 0;
-        for (const s of prev) {
-          const m = /^(?:新会话|New session)(?: (\d+))?$/.exec(s.title);
-          if (m) n = Math.max(n, m[1] ? Number(m[1]) : 1);
-        }
-        const s: Session = {
-          id,
-          title: placeholderTitle(n + 1, lang),
-          kind: dir ? "project" : "chat",
-          ...(dir ? { dir } : {}),
-          status: "idle",
-          updatedAtMs: Date.now(),
-          messages: [],
-        };
-        return [s, ...prev];
-      });
-      setActiveId(id);
-      return id;
+  /** Start (or return to) the draft. The draft keeps its original project /
+   * group context; per-target args only seed a fresh draft. */
+  const newTask = useCallback(
+    (projectId?: string, groupId?: string) => {
+      activateDraft(projectId || groupId ? { text: "", projectId, groupId } : undefined);
     },
-    [sessions, lang],
+    [activateDraft],
   );
 
+  const updateDraftText = useCallback((text: string) => {
+    setDraft((prev) => (prev ? { ...prev, text } : prev));
+  }, []);
+
   /** Remove a session; a deleted active one falls back to the most recently
-   * updated remaining session, or a fresh empty chat when none is left. */
+   * updated remaining session, or the draft when none is left. */
   const deleteSession = useCallback(
     (id: string) => {
       abortStream(id);
@@ -344,62 +363,145 @@ export function useMockChat() {
       });
       const remaining = sessionsRef.current.filter((s) => s.id !== id);
       if (remaining.length === 0) {
-        const fresh: Session = {
-          id: uid("s"),
-          title: placeholderTitle(1, lang),
-          kind: "chat",
-          status: "idle",
-          updatedAtMs: Date.now(),
-          messages: [],
-        };
-        setSessions([fresh]);
-        setActiveId(fresh.id);
+        setSessions(remaining);
+        activateDraft();
         return;
       }
       setSessions(remaining);
-      if (activeIdRef.current === id) setActiveId(mostRecentSession(remaining).id);
+      if (activeIdRef.current === id) {
+        const next = mostRecentSession(remaining);
+        if (next) setActiveId(next.id);
+      }
     },
-    [abortStream, lang],
+    [abortStream, activateDraft],
   );
 
-  const selectSession = useCallback((id: string) => {
+  /** Select; clear unread only when it still matches the rendered value. */
+  const selectSession = useCallback((id: string, expectedUnreadAtMs?: number) => {
     setActiveId(id);
-    setSessions((prev) => prev.map((s) => (s.id === id && s.status === "unread" ? { ...s, status: "idle" } : s)));
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === id && s.unreadAtMs !== undefined && (expectedUnreadAtMs === undefined || s.unreadAtMs === expectedUnreadAtMs)
+          ? { ...s, unreadAtMs: undefined }
+          : s,
+      ),
+    );
   }, []);
 
-  const activeSession = sessions.find((s) => s.id === activeId) ?? mostRecentSession(sessions);
-  const streaming = streamingIds.has(activeSession.id);
-  const queued = queues[activeSession.id] ?? EMPTY_QUEUE;
+  const togglePin = useCallback((id: string) => {
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, pinned: !s.pinned } : s)));
+  }, []);
+
+  const setArchived = useCallback(
+    (id: string, archived: boolean) => {
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, archived } : s)));
+      if (archived && activeIdRef.current === id) {
+        const next = mostRecentSession(sessionsRef.current.filter((s) => s.id !== id && !s.archived));
+        if (next) {
+          setActiveId(next.id);
+          return;
+        }
+        activateDraft();
+      }
+    },
+    [activateDraft],
+  );
+
+  const renameSession = useCallback((id: string, title: string) => {
+    const name = title.trim();
+    if (!name) return;
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title: name, titleOverridden: true } : s)));
+  }, []);
+
+  const markUnread = useCallback((id: string) => {
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, unreadAtMs: Date.now() } : s)));
+  }, []);
+
+  const moveToProject = useCallback((id: string, projectId?: string) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? projectId
+            ? { ...s, projectId }
+            : { ...s, projectId: undefined }
+          : s,
+      ),
+    );
+  }, []);
+
+  const saveProject = useCallback((input: { id?: string; name: string }) => {
+    const name = input.name.trim();
+    if (!name) return;
+    if (input.id) {
+      setProjects((prev) => prev.map((p) => (p.id === input.id ? { ...p, name } : p)));
+      return;
+    }
+    setProjects((prev) => [...prev, { id: uid("p"), name, pinned: false, createdAtMs: Date.now() }]);
+  }, []);
+
+  /** Delete detaches member sessions (they fall back to the unfiled list). */
+  const deleteProject = useCallback((id: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setSessions((prev) =>
+      prev.map((s) => (s.projectId === id ? { ...s, projectId: undefined } : s)),
+    );
+  }, []);
+
+  const toggleProjectPin = useCallback((id: string) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
+  }, []);
+
+  const activeSession = activeId === null ? null : (sessions.find((s) => s.id === activeId) ?? null);
+  const streaming = activeSession !== null && streamingIds.has(activeSession.id);
+  const queued = activeSession !== null ? (queues[activeSession.id] ?? EMPTY_QUEUE) : EMPTY_QUEUE;
 
   /* Drain: dispatch the head on each idle edge; stop pauses, send or the
    * resume button un-pauses. */
   useEffect(() => {
-    if (streaming || queuePaused.has(activeSession.id) || queued.length === 0) return;
+    if (activeSession === null || streaming || queuePaused.has(activeSession.id) || queued.length === 0) return;
     const next = queued[0];
+    const activeKey = activeSession.id;
     setQueues((prev) => {
-      const rest = (prev[activeSession.id] ?? []).slice(1);
+      const rest = (prev[activeKey] ?? []).slice(1);
       const later = { ...prev };
-      if (rest.length === 0) delete later[activeSession.id];
-      else later[activeSession.id] = rest;
+      if (rest.length === 0) delete later[activeKey];
+      else later[activeKey] = rest;
       return later;
     });
     send(next);
-  }, [streaming, queued, queuePaused, activeSession.id, send]);
+  }, [streaming, queued, queuePaused, activeSession, send]);
+
+  const archivedSessions = sessions.filter((s) => s.archived);
+
+  const groups: TaskGroup[] = initialGroups;
 
   return {
     sessions,
+    projects,
+    groups,
+    archivedSessions,
+    draft,
     activeSession,
     streaming,
     queued,
-    queuePaused: queuePaused.has(activeSession.id),
+    queuePaused: activeSession !== null && queuePaused.has(activeSession.id),
     send,
     stop,
     removeQueued,
     resumeQueue,
-    newSession,
+    newTask,
+    updateDraftText,
     deleteSession,
     selectSession,
     resolvePermission,
+    togglePin,
+    setArchived,
+    renameSession,
+    markUnread,
+    moveToProject,
+    saveProject,
+    deleteProject,
+    toggleProjectPin,
   };
 
   /* ------------------------------------------------------------------ */
@@ -458,35 +560,36 @@ export function useMockChat() {
     patchTool(sessionId, replyId, bashId, { status: "done", summary: 'rg -n "chat-" src/chat (4 处)' });
 
     const editId = uid("b");
+    const editHunk = {
+      header: "@@ -58,6 +58,11 @@ export function TaskSidebar() {",
+      lines: [
+        { kind: "equal" as const, oldLine: 58, newLine: 58, text: "  return (" },
+        { kind: "del" as const, oldLine: 59, text: "    <nav data-testid=\"chat-sidebar\">" },
+        { kind: "add" as const, newLine: 59, text: "    <nav" },
+        { kind: "add" as const, newLine: 60, text: "      data-testid=\"chat-sidebar\"" },
+        { kind: "add" as const, newLine: 61, text: "      data-session-count={sessions.length}" },
+        { kind: "add" as const, newLine: 62, text: "      aria-label=\"会话侧栏\"" },
+        { kind: "add" as const, newLine: 63, text: "    >" },
+        { kind: "equal" as const, oldLine: 60, newLine: 64, text: "      <SectionLabel>会话</SectionLabel>" },
+      ],
+    };
     P({
       kind: "tool",
       id: editId,
       name: "Edit",
       status: "running",
-      summary: "src/chat/Sidebar.tsx",
-      detail: {
-        tool: "edit",
-        path: "src/chat/Sidebar.tsx",
-        hunks: [
-          {
-            header: "@@ -58,6 +58,11 @@ export function Sidebar() {",
-            lines: [
-              { kind: "equal", oldLine: 58, newLine: 58, text: "  return (" },
-              { kind: "del", oldLine: 59, text: "    <nav data-testid=\"chat-sidebar\">" },
-              { kind: "add", newLine: 59, text: "    <nav" },
-              { kind: "add", newLine: 60, text: "      data-testid=\"chat-sidebar\"" },
-              { kind: "add", newLine: 61, text: "      data-session-count={sessions.length}" },
-              { kind: "add", newLine: 62, text: "      aria-label=\"会话侧栏\"" },
-              { kind: "add", newLine: 63, text: "    >" },
-              { kind: "equal", oldLine: 60, newLine: 64, text: "      <SectionLabel>会话</SectionLabel>" },
-            ],
-          },
-        ],
-      },
+      summary: "src/chat/sidebar/TaskSidebar.tsx",
+      detail: { tool: "edit", path: "src/chat/sidebar/TaskSidebar.tsx", hunks: [editHunk] },
     });
     await sleep(EDIT_RUN_MS);
     if (!live()) return;
     patchTool(sessionId, replyId, editId, { status: "done" });
+    const stats = diffStats([editHunk]);
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, changeSummary: { fileCount: 1, added: stats.add, removed: stats.del } } : s,
+      ),
+    );
 
     const text2Id = uid("b");
     P({ kind: "text", id: text2Id, markdown: "" });

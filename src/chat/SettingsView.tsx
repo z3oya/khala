@@ -2,9 +2,10 @@
  * Settings nav occupies the sidebar slot (shared width/collapse state, no
  * resizer); panel renders in the main card. Raw values stay untranslated.
  */
-import type { ComponentType } from "react";
-import { Cpu, Info, Keyboard, Palette, Settings, Shield, SlidersHorizontal } from "lucide-react";
-import { useI18n, type MsgKey, type StringKey } from "./i18n";
+import { useState, type ComponentType } from "react";
+import { Archive, Cpu, Info, Keyboard, Palette, Settings, Shield, SlidersHorizontal } from "lucide-react";
+import { relTime, useI18n, type MsgKey, type StringKey } from "./i18n";
+import type { Session } from "./types";
 
 interface Section {
   id: string;
@@ -68,6 +69,13 @@ const SECTIONS: Section[] = [
       ["rowNewline", { raw: "Shift+Enter" }],
       ["rowStop", { key: "valStopButton" }],
     ],
+  },
+  {
+    id: "archive",
+    labelKey: "stArchive",
+    descKey: "stArchiveDesc",
+    icon: Archive,
+    rows: [],
   },
   {
     id: "about",
@@ -147,7 +155,68 @@ export function SettingsSidebar({ activeId, onSelect, width, collapsed, onBack }
   );
 }
 
-export function SettingsPanel({ activeId }: { activeId: string }) {
+function ArchivePanel({
+  archived,
+  onRestore,
+  onDeleteForever,
+}: {
+  archived: Session[];
+  onRestore: (id: string) => void;
+  onDeleteForever: (id: string) => void;
+}) {
+  const { t, lang } = useI18n();
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  if (archived.length === 0) {
+    return (
+      <div className="modal-empty" data-testid="chat-settings-archive-empty">
+        {t("archivedEmpty")}
+      </div>
+    );
+  }
+  return (
+    <div className="archived-list" data-testid="chat-settings-archive" data-count={archived.length}>
+      {archived.map((s) => (
+        <div key={s.id} className="archived-row" data-testid="task-archived-row" data-id={s.id}>
+          <span className="t-slot" aria-hidden />
+          <span className="t-title" title={s.title}>
+            {s.title}
+          </span>
+          <span className="t-meta">{relTime(s.updatedAtMs, lang)}</span>
+          <button type="button" className="cbtn cbtn-ghost modal-mini" data-testid="task-restore" onClick={() => onRestore(s.id)}>
+            {t("restore")}
+          </button>
+          <button
+            type="button"
+            className="cbtn modal-danger modal-mini"
+            data-testid="task-delete-forever"
+            data-confirming={confirmingId === s.id || undefined}
+            onClick={() => {
+              if (confirmingId === s.id) {
+                onDeleteForever(s.id);
+                return;
+              }
+              setConfirmingId(s.id);
+            }}
+          >
+            {confirmingId === s.id ? t("clickAgainToDelete") : t("deleteForever")}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SettingsPanel({
+  activeId,
+  archived,
+  onRestoreArchive,
+  onDeleteArchive,
+}: {
+  activeId: string;
+  archived: Session[];
+  onRestoreArchive: (id: string) => void;
+  onDeleteArchive: (id: string) => void;
+}) {
   const { lang, setLang, t } = useI18n();
   const active = SECTIONS.find((s) => s.id === activeId) ?? SECTIONS[0];
 
@@ -156,6 +225,9 @@ export function SettingsPanel({ activeId }: { activeId: string }) {
       <div className="st-panel" data-testid="chat-settings-panel" data-section={active.id}>
         <h2 className="st-title">{t(active.labelKey)}</h2>
         <p className="st-desc">{t(active.descKey)}</p>
+        {active.id === "archive" && (
+          <ArchivePanel archived={archived} onRestore={onRestoreArchive} onDeleteForever={onDeleteArchive} />
+        )}
         <div className="st-rows">
           {active.id === "general" && (
             <div className="st-row" data-testid="chat-settings-language-row">

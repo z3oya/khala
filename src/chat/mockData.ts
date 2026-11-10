@@ -1,18 +1,48 @@
-/* Static demo data; times are relative to load so timestamps stay sensible. */
-import type { Session } from "./types";
+/* Static demo data; times relative to load. Covers every sidebar row state. */
+import type { Project, Session, TaskGroup } from "./types";
 
 const min = 60_000;
 const hour = 60 * min;
+const day = 24 * hour;
 const now = Date.now();
+
+export const initialProjects: Project[] = [
+  { id: "p-khala", name: "khala", path: "~/lab/khala", pinned: true, createdAtMs: now - 30 * day },
+  { id: "p-goose", name: "goose", path: "~/lab/goose", pinned: false, createdAtMs: now - 20 * day },
+  { id: "p-blog", name: "blog", path: "~/space/blog", pinned: false, createdAtMs: now - 9 * day },
+];
+
+export const initialGroups: TaskGroup[] = [
+  { id: "g-hot", name: "本周焦点", color: "red" },
+  { id: "g-research", name: "调研", color: "blue" },
+];
+
+const user = (id: string, atMs: number, markdown: string) => ({
+  id,
+  role: "user" as const,
+  atMs,
+  blocks: [{ kind: "text" as const, id: `${id}-b`, markdown }],
+});
+
+const reply = (id: string, atMs: number, markdown: string) => ({
+  id,
+  role: "assistant" as const,
+  atMs,
+  blocks: [
+    { kind: "text" as const, id: `${id}-b`, markdown },
+  ] as Session["messages"][number]["blocks"],
+});
 
 export const initialSessions: Session[] = [
   {
     id: "s-ui-first",
-    kind: "project",
     title: "UI 首版 · 灰阶设计",
-    dir: "~/lab/khala",
+    projectId: "p-khala",
+    pinned: true,
+    archived: false,
     status: "idle",
     updatedAtMs: now - 38 * min,
+    changeSummary: { fileCount: 3, added: 24, removed: 11 },
     messages: [
       {
         id: "m1",
@@ -202,9 +232,11 @@ export const initialSessions: Session[] = [
   },
   {
     id: "s-e2e",
-    kind: "project",
     title: "E2E 双传输联调",
-    dir: "~/lab/khala",
+    projectId: "p-khala",
+    groupId: "g-hot",
+    pinned: false,
+    archived: false,
     status: "streaming",
     updatedAtMs: now - 3 * min,
     messages: [
@@ -259,11 +291,58 @@ export const initialSessions: Session[] = [
     ],
   },
   {
+    id: "s-perm",
+    title: "权限卡交互走查",
+    projectId: "p-khala",
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 12 * min,
+    messages: [
+      user("m-perm-u", now - 13 * min, "演示一下权限确认卡在会话里长什么样。"),
+      {
+        id: "m-perm-r",
+        role: "assistant",
+        atMs: now - 12 * min,
+        blocks: [
+          {
+            kind: "text",
+            id: "m-perm-b1",
+            markdown: "下一步要跑测试,等你确认:",
+          },
+          {
+            kind: "permission",
+            id: "m-perm-b2",
+            toolName: "Bash",
+            summary: "cargo test --workspace",
+            command: "cargo test --workspace",
+            /* decision undefined → pending → row shows the waiting badge */
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "s-clippy",
+    title: "clippy 告警清理",
+    projectId: "p-khala",
+    pinned: false,
+    archived: false,
+    status: "error",
+    updatedAtMs: now - 75 * min,
+    messages: [
+      user("m-clip-u", now - 80 * min, "把 greet.rs 里那条 unused variable 告警处理掉。"),
+      reply("m-clip-r", now - 75 * min, "改到一半工具链断在了 rustfmt 组件缺失,稍后重试。"),
+    ],
+  },
+  {
     id: "s-goose",
-    kind: "project",
     title: "goose 侧栏结构调研",
-    dir: "~/lab/goose",
-    status: "unread",
+    projectId: "p-goose",
+    pinned: true,
+    archived: false,
+    unreadAtMs: now - 26 * hour,
+    status: "idle",
     updatedAtMs: now - 26 * hour,
     messages: [
       {
@@ -294,9 +373,51 @@ export const initialSessions: Session[] = [
     ],
   },
   {
+    id: "s-dnd",
+    title: "dnd-kit 拖拽排序预研",
+    projectId: "p-goose",
+    groupId: "g-research",
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 3 * day,
+    messages: [
+      user("m-dnd-u", now - 3 * day - 4 * min, "dnd-kit 的 sortable 约束够不够做项目行排序?"),
+      reply("m-dnd-r", now - 3 * day, "够:vertical 策略 + closestCenter + PointerSensor distance 6 就能对齐 ZCodium 的手感。"),
+    ],
+  },
+  {
+    id: "s-migrate",
+    title: "博客迁移脚本",
+    projectId: "p-blog",
+    pinned: false,
+    archived: true,
+    status: "idle",
+    updatedAtMs: now - 6 * day,
+    messages: [
+      user("s-mig-u", now - 6 * day - 2 * min, "把 hexo 的文章 frontmatter 批量转成新格式。"),
+      reply("s-mig-r", now - 6 * day, "脚本已交付:`scripts/migrate.mjs`,42 篇全部转换通过。"),
+    ],
+  },
+  {
+    id: "s-theme",
+    title: "暗色主题配色草案",
+    projectId: "p-blog",
+    pinned: false,
+    archived: true,
+    status: "idle",
+    updatedAtMs: now - 8 * day,
+    messages: [
+      user("s-theme-u", now - 8 * day - 3 * min, "出一版博客暗色配色。"),
+      reply("s-theme-r", now - 8 * day, "底 #161616 / 面 #1e1e1e / 字 #d4d4d4,先试一周再定。"),
+    ],
+  },
+  {
     id: "c-models",
-    kind: "chat",
     title: "GLM 与本地模型选型",
+    groupId: "g-research",
+    pinned: false,
+    archived: false,
     status: "idle",
     updatedAtMs: now - 2 * hour,
     messages: [
@@ -329,9 +450,11 @@ export const initialSessions: Session[] = [
   },
   {
     id: "c-regex",
-    kind: "chat",
     title: "正则速查",
-    status: "unread",
+    pinned: false,
+    archived: false,
+    unreadAtMs: now - 5 * hour,
+    status: "idle",
     updatedAtMs: now - 5 * hour,
     messages: [
       {
@@ -363,8 +486,9 @@ export const initialSessions: Session[] = [
   },
   {
     id: "c-toolcards",
-    kind: "chat",
     title: "工具卡分型样例",
+    pinned: false,
+    archived: false,
     status: "idle",
     updatedAtMs: now - 50 * min,
     messages: [
@@ -452,6 +576,42 @@ export const initialSessions: Session[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: "c-collapsible",
+    title: "折叠动画性能调优",
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 20 * hour,
+    messages: [
+      user("m-col-u", now - 20 * hour - 2 * min, "0fr/1fr 折叠在低端机上掉帧吗?"),
+      reply("m-col-r", now - 20 * hour, "内容层加 overflow:hidden 后稳定 60fps;再快就减 opacity 过渡。"),
+    ],
+  },
+  {
+    id: "c-prefs",
+    title: "侧栏偏好持久化方案",
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 2 * day - 5 * hour,
+    messages: [
+      user("m-pref-u", now - 2 * day - 6 * hour, "视图/展开/顺序放 localStorage 还是等 Host?"),
+      reply("m-pref-r", now - 2 * day - 5 * hour, "客户端偏好全放 localStorage,跨窗口走 storage 事件;Host 只管事实层。"),
+    ],
+  },
+  {
+    id: "c-marquee",
+    title: "标题跑马灯的降级策略与遮罩细节复核",
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 9 * day,
+    messages: [
+      user("m-mar-u", now - 9 * day - 2 * min, "跑马灯在 reduced-motion 下怎么降级?"),
+      reply("m-mar-r", now - 9 * day, "不启动动画,退化为右缘渐隐遮罩 + title 提示,两端渐隐保留。"),
     ],
   },
 ];
