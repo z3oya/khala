@@ -9,8 +9,11 @@ export type ToolStatus = "running" | "done" | "error";
 export type SessionStatus = "idle" | "streaming" | "error";
 export type PermissionDecision = "allowOnce" | "alwaysAllow" | "deny";
 
+/** Blank placeholder pages reachable from the sidebar nav. */
+export type PlaceholderPage = "automation" | "plugins" | "assistant";
+
 /** Main-frame views switched by the shell (chat-root[data-view]). */
-export type View = "chat" | "settings" | "apps";
+export type View = "chat" | "settings" | "apps" | PlaceholderPage;
 
 /** Virtual project grouping tasks (mirrors khala-core's future project DTO). */
 export interface Project {

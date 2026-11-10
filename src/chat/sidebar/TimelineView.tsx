@@ -53,7 +53,6 @@ export function TimelineView({ sessions, ops }: Props) {
         <div key={key} className="sb-zone" data-testid="task-timeline-group" data-key={key}>
           <div className="sb-zone-label static" data-testid="task-date-heading" data-key={key}>
             <span className="sb-zone-name">{heading(key)}</span>
-            <span className="sb-zone-tag">{items.length}</span>
           </div>
           <div className="sb-zone-body">
             {items.map((s) => (

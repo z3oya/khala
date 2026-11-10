@@ -1,5 +1,6 @@
 /* Chat shell; root data-* attributes are agent assertion anchors. */
 import { useEffect, useState } from "react";
+import { Bot, Puzzle, Settings, Workflow } from "lucide-react";
 import { useMockChat } from "./useMockChat";
 import { I18nProvider, useI18n } from "./i18n";
 import { TaskSidebar } from "./sidebar/TaskSidebar";
@@ -12,7 +13,8 @@ import { LogoToggle } from "./LogoToggle";
 import { MessageList } from "./MessageList";
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
-import type { View } from "./types";
+import { PlaceholderView } from "./PlaceholderView";
+import type { PlaceholderPage, View } from "./types";
 import "./tokens.css";
 import "./chat.css";
 
@@ -20,6 +22,12 @@ const DEFAULT_SIDEBAR_WIDTH = 396;
 /* Holds must outlast the st-*-out / st-return-in durations in chat.css. */
 const SETTINGS_EXIT_MS = 180;
 const CHAT_RETURN_MS = 240;
+
+const PLACEHOLDERS: Record<PlaceholderPage, { icon: typeof Workflow; key: "automation" | "plugins" | "assistant" }> = {
+  automation: { icon: Workflow, key: "automation" },
+  plugins: { icon: Puzzle, key: "plugins" },
+  assistant: { icon: Bot, key: "assistant" },
+};
 
 export function ChatApp() {
   return (
@@ -92,14 +100,19 @@ function ChatShell() {
     setComposerValue(text);
   };
 
-  /* Sidebar 'Apps' entry toggles workspace <-> apps page. */
-  const toggleApps = () => setView((v) => (v === "apps" ? "chat" : "apps"));
-  /* Settings is one-way per button: workspace entry opens, settings footer returns. */
   const [settingsJustClosed, setSettingsJustClosed] = useState(false);
   const [settingsClosing, setSettingsClosing] = useState(false);
-  const openSettings = () => setView("settings");
+  /* null = no spin on first render */
+  const [gearSpin, setGearSpin] = useState<"on" | "off" | null>(null);
+  const openSettings = () => {
+    setSettingsClosing(false);
+    setSettingsJustClosed(false);
+    setGearSpin("on");
+    setView("settings");
+  };
   const closeSettings = () => {
     if (settingsClosing) return;
+    setGearSpin("off");
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setView("chat");
       return;
@@ -159,9 +172,9 @@ function ChatShell() {
     onSaveProject: saveProject,
     onDeleteProject: deleteProject,
     onToggleProjectPin: toggleProjectPin,
-    onOpenSettings: openSettings,
-    onOpenApps: toggleApps,
-    settingsJustClosed,
+    onOpenApps: () => setView("apps"),
+    onOpenPage: (page: PlaceholderPage) => setView(page),
+    page: view,
     width: sidebarWidth,
     collapsed: sidebarCollapsed,
     dragging: sidebarDragging,
@@ -169,7 +182,18 @@ function ChatShell() {
     onDragging: setSidebarDragging,
   };
 
-  const headerTitle = view === "apps" ? t("apps") : view === "settings" ? t("stTitle") : isDraft ? t("newTask") : activeSession.title;
+  const placeholderPage = view in PLACEHOLDERS ? (view as PlaceholderPage) : null;
+
+  const headerTitle =
+    view === "apps"
+      ? t("apps")
+      : view === "settings"
+        ? t("stTitle")
+        : placeholderPage
+          ? t(PLACEHOLDERS[placeholderPage].key)
+          : isDraft
+            ? t("newTask")
+            : activeSession.title;
 
   return (
     <div
@@ -194,6 +218,20 @@ function ChatShell() {
         <LogoToggle sidebarCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((v) => !v)} />
       </div>
 
+      {/* Persistent gear: must stay mounted across view switches. */}
+      <button
+        type="button"
+        className="sb-settings sb-settings-floating"
+        data-testid="chat-settings"
+        data-open={view === "settings" || undefined}
+        data-spin={gearSpin ?? undefined}
+        title={view === "settings" ? t("backToWorkspace") : t("openSettings")}
+        aria-label={view === "settings" ? t("backToWorkspace") : t("openSettings")}
+        onClick={() => (view === "settings" ? closeSettings() : openSettings())}
+      >
+        <Settings size={16} />
+      </button>
+
       {view === "settings" ? (
         <SettingsSidebar
           activeId={settingsSection}
@@ -201,7 +239,6 @@ function ChatShell() {
           width={sidebarWidth}
           collapsed={sidebarCollapsed}
           closing={settingsClosing}
-          onBack={closeSettings}
         />
       ) : (
         <TaskSidebar {...sidebarProps} />
@@ -220,6 +257,12 @@ function ChatShell() {
             />
           ) : view === "apps" ? (
             <AppsView onBuildInChat={buildInChat} />
+          ) : placeholderPage ? (
+            <PlaceholderView
+              page={placeholderPage}
+              icon={PLACEHOLDERS[placeholderPage].icon}
+              title={t(PLACEHOLDERS[placeholderPage].key)}
+            />
           ) : (
             <main className="chat-main">
               {isEmpty ? (

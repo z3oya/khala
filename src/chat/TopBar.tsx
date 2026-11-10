@@ -11,6 +11,9 @@ const TITLE_TESTID: Record<View, string> = {
   chat: "chat-session-title",
   apps: "chat-apps-title",
   settings: "chat-settings-title",
+  automation: "chat-page-title",
+  plugins: "chat-page-title",
+  assistant: "chat-page-title",
 };
 
 interface Props {

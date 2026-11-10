@@ -121,7 +121,6 @@ export function ProjectTree({
         <div className="sb-zone" data-testid="task-pinned-zone">
           <div className="sb-zone-label static" data-testid="task-pinned-label">
             <span className="sb-zone-name">{t("pinned")}</span>
-            <span className="sb-zone-tag">{pinned.length}</span>
           </div>
           <div className="sb-zone-body">
             {visiblePinned.map((s) => (
@@ -138,7 +137,6 @@ export function ProjectTree({
         <div className="sb-zone-head">
           <div className="sb-zone-label static" data-testid="task-project-zone-label">
             <span className="sb-zone-name">{t("projects")}</span>
-            <span className="sb-zone-tag">{projects.length}</span>
           </div>
           <button
             type="button"
@@ -167,13 +165,12 @@ export function ProjectTree({
                     onContextMenu={(e) => ops.onCtx(e, projectMenu(p, open))}
                     aria-expanded={open}
                   >
-                    {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    {open ? <FolderOpen size={12} /> : <Folder size={12} />}
+                    {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    {open ? <FolderOpen size={16} /> : <Folder size={16} />}
                     <span className="p-name" title={p.path ? `${p.name} · ${p.path}` : p.name}>
                       {p.name}
                     </span>
                     {unread && <span className="dot dot-unread" data-testid="task-project-unread" />}
-                    <span className="p-count">{tasks.length}</span>
                   </button>
                   <span className="p-actions">
                     <button
@@ -223,7 +220,6 @@ export function ProjectTree({
         <div className="sb-zone-head">
           <div className="sb-zone-label static" data-testid="task-unfiled-label">
             <span className="sb-zone-name">{t("tasks")}</span>
-            <span className="sb-zone-tag">{unfiled.length}</span>
           </div>
           <button
             type="button"

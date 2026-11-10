@@ -3,7 +3,7 @@
  * resizer); panel renders in the main card. Raw values stay untranslated.
  */
 import { useState, type ComponentType } from "react";
-import { Archive, Cpu, Info, Keyboard, Palette, Settings, Shield, SlidersHorizontal } from "lucide-react";
+import { Archive, Cpu, Info, Keyboard, Palette, Shield, SlidersHorizontal } from "lucide-react";
 import { relTime, useI18n, type MsgKey, type StringKey } from "./i18n";
 import type { Session } from "./types";
 
@@ -102,10 +102,9 @@ interface NavProps {
   width: number;
   collapsed: boolean;
   closing: boolean;
-  onBack: () => void;
 }
 
-export function SettingsSidebar({ activeId, onSelect, width, collapsed, closing, onBack }: NavProps) {
+export function SettingsSidebar({ activeId, onSelect, width, collapsed, closing }: NavProps) {
   const { t } = useI18n();
 
   return (
@@ -139,19 +138,8 @@ export function SettingsSidebar({ activeId, onSelect, width, collapsed, closing,
           })}
         </nav>
 
-        <div className="sb-footer">
-          <button
-            type="button"
-            className="sb-settings"
-            data-testid="chat-settings"
-            title={t("backToWorkspace")}
-            aria-label={t("backToWorkspace")}
-            aria-pressed="true"
-            onClick={onBack}
-          >
-            <Settings size={16} />
-          </button>
-        </div>
+        {/* Spacing for the floating gear (ChatApp). */}
+        <div className="sb-footer" />
       </div>
     </aside>
   );

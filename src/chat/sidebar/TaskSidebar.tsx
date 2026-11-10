@@ -1,7 +1,7 @@
 /* Task sidebar v4 (ZCodium project/task list): nav rows, view switcher,
  * three views, footer. Collapses stay mounted behind grid-rows + inert. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { AppWindow, Bot, Check, ListFilter, Plus, Puzzle, Search, Settings, Workflow } from "lucide-react";
+import { AppWindow, Bot, Check, ListFilter, Plus, Puzzle, Search, Workflow } from "lucide-react";
 import type { CtxItem } from "../ChatContextMenu";
 import { useI18n, type MsgKey } from "../i18n";
 import type { Draft, Project, Session, TaskGroup } from "../types";
@@ -14,6 +14,7 @@ import { ProjectEditorDialog, RenameDialog } from "./dialogs";
 import type { TaskRowOps } from "./TaskRow";
 import { useScrollMask } from "./useScrollMask";
 import type { SidebarView, TaskSidebarPrefs } from "./useTaskSidebarPrefs";
+import type { PlaceholderPage, View } from "../types";
 
 interface Props {
   sessions: Session[];
@@ -37,9 +38,9 @@ interface Props {
   onSaveProject: (input: { id?: string; name: string }) => void;
   onDeleteProject: (id: string) => void;
   onToggleProjectPin: (id: string) => void;
-  onOpenSettings: () => void;
   onOpenApps: () => void;
-  settingsJustClosed: boolean;
+  onOpenPage: (page: PlaceholderPage) => void;
+  page: View;
   width: number;
   collapsed: boolean;
   dragging: boolean;
@@ -77,9 +78,9 @@ export function TaskSidebar(props: Props) {
     onSaveProject,
     onDeleteProject,
     onToggleProjectPin,
-    onOpenSettings,
     onOpenApps,
-    settingsJustClosed,
+    onOpenPage,
+    page,
     width,
     collapsed,
     dragging,
@@ -148,26 +149,53 @@ export function TaskSidebar(props: Props) {
       <div className="chat-sidebar-inner">
         <nav className="sb-nav" data-testid="task-nav">
           <button type="button" className="sb-nav-new" data-testid="task-nav-new" onClick={() => onNewTask()}>
-            <Plus size={14} />
+            <Plus size={18} />
             <span className="sb-nav-new-label">{t("newTask")}</span>
             <kbd className="sb-kbd" aria-hidden>
               Ctrl N
             </kbd>
           </button>
-          <button type="button" className="sb-nav-row" data-testid="task-nav-automation" title={`${t("automation")} (mock)`}>
-            <Workflow size={13} />
+          <button
+            type="button"
+            className={`sb-nav-row${page === "automation" ? " active" : ""}`}
+            data-testid="task-nav-automation"
+            data-active={page === "automation" || undefined}
+            title={t("automation")}
+            onClick={() => onOpenPage("automation")}
+          >
+            <Workflow size={18} />
             {t("automation")}
           </button>
-          <button type="button" className="sb-nav-row" data-testid="task-nav-apps" onClick={onOpenApps}>
-            <AppWindow size={13} />
+          <button
+            type="button"
+            className={`sb-nav-row${page === "apps" ? " active" : ""}`}
+            data-testid="task-nav-apps"
+            data-active={page === "apps" || undefined}
+            onClick={onOpenApps}
+          >
+            <AppWindow size={18} />
             {t("apps")}
           </button>
-          <button type="button" className="sb-nav-row" data-testid="task-nav-plugins" title={`${t("plugins")} (mock)`}>
-            <Puzzle size={13} />
+          <button
+            type="button"
+            className={`sb-nav-row${page === "plugins" ? " active" : ""}`}
+            data-testid="task-nav-plugins"
+            data-active={page === "plugins" || undefined}
+            title={t("plugins")}
+            onClick={() => onOpenPage("plugins")}
+          >
+            <Puzzle size={18} />
             {t("plugins")}
           </button>
-          <button type="button" className="sb-nav-row" data-testid="task-nav-assistant" title={`${t("assistant")} (mock)`}>
-            <Bot size={13} />
+          <button
+            type="button"
+            className={`sb-nav-row${page === "assistant" ? " active" : ""}`}
+            data-testid="task-nav-assistant"
+            data-active={page === "assistant" || undefined}
+            title={t("assistant")}
+            onClick={() => onOpenPage("assistant")}
+          >
+            <Bot size={18} />
             {t("assistant")}
           </button>
         </nav>
@@ -257,19 +285,8 @@ export function TaskSidebar(props: Props) {
           {prefs.view === "timeline" && <TimelineView sessions={live} ops={ops} />}
         </div>
 
-        <div className="sb-footer">
-          <button
-            type="button"
-            className="sb-settings"
-            data-testid="chat-settings"
-            data-gear={settingsJustClosed ? "off" : undefined}
-            title={t("openSettings")}
-            aria-label={t("openSettings")}
-            onClick={onOpenSettings}
-          >
-            <Settings size={16} />
-          </button>
-        </div>
+        {/* Spacing for the floating gear (ChatApp). */}
+        <div className="sb-footer" />
       </div>
 
       <div

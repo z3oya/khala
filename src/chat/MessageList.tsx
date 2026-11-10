@@ -71,7 +71,7 @@ export function MessageList({ session, onResolvePermission }: Props) {
             >
               <div className="msg-meta-row">
                 <span className="assistant-mark">
-                  <Feather size={11} />
+                  <Feather size={14} />
                 </span>
                 <span className="assistant-name">khala</span>
                 <span className="msg-time">{clock(message.atMs, localeOf(lang))}</span>

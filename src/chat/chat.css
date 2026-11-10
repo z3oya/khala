@@ -158,6 +158,7 @@
   display: flex;
   flex-direction: column;
   padding: calc(var(--card-inset) + var(--card-border-w) + var(--topbar-h) + 8px) 12px 0; /* clears the toggle band + 8px gap */
+  user-select: none;
 }
 
 /* Logo morph toggle: the mark rests; hover/focus crossfades to PanelLeft. */
@@ -251,6 +252,13 @@
 .sb-nav-row:hover svg {
   color: inherit;
 }
+.sb-nav-row.active {
+  background: var(--selected);
+  color: var(--text-1);
+}
+.sb-nav-row.active svg {
+  color: inherit;
+}
 
 /* Task list: projects (by directory) + standalone chats. */
 .sb-scroll {
@@ -296,7 +304,6 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 24px;
   width: 100%;
   padding: 0 8px;
@@ -369,9 +376,6 @@
   align-items: center;
   gap: 3px;
 }
-.sb-zone-tag {
-  font-variant-numeric: tabular-nums;
-}
 .sb-project {
   display: flex;
   flex-direction: column;
@@ -409,12 +413,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.p-count {
-  flex: none;
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
 }
 .p-actions {
   flex: none;
@@ -561,15 +559,9 @@
   color: var(--text-1);
 }
 .t-act[data-confirming] {
-  width: auto;
-  padding: 0 7px;
   color: var(--err);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--err);
-}
-.t-confirm {
-  font-size: var(--fs-xs);
-  white-space: nowrap;
 }
 .t-row:hover .t-meta,
 .t-row:focus-within .t-meta {
@@ -713,22 +705,22 @@
   background: var(--border-strong);
 }
 
+/* padding-bottom reserves the floating gear: 30px + 12px offset */
 .sb-footer {
-  display: flex;
-  align-items: center;
-  border-top: 1px solid var(--border);
-  margin: 10px -12px 0;
-  padding: 8px 12px 12px;
+  margin-top: 10px;
+  padding-bottom: 42px;
 }
 .sb-settings {
   color: var(--text-2);
 }
-.sb-settings[aria-pressed="true"] {
-  background: var(--surface-3);
-  color: var(--text-1);
+.sb-settings-floating {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 5;
 }
-.sb-settings[aria-pressed="true"]:hover:not(:disabled) {
-  background: var(--surface-3);
+.chat-app[data-sidebar="collapsed"] .sb-settings-floating {
+  display: none;
 }
 
 /* ---------- dialogs ---------- */
@@ -1001,8 +993,8 @@
   color: var(--text-3);
 }
 .assistant-mark {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1012,7 +1004,7 @@
 }
 .assistant-name {
   font-weight: 600;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-msg);
   color: var(--text-1);
 }
 .msg-time {
@@ -1725,6 +1717,39 @@
   font-weight: 500;
 }
 
+/* ---------- blank placeholder pages (automation / plugins / assistant) ---------- */
+
+.page-placeholder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--bg);
+}
+.ph-mark {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  border-radius: var(--r-md);
+}
+.ph-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.ph-hint {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
 /* ---------- apps page ---------- */
 
 .apps-main {
@@ -2215,10 +2240,10 @@
     transform: rotate(120deg);
   }
 }
-.sb-settings[aria-pressed="true"] svg {
+.sb-settings[data-spin="on"] svg {
   animation: gear-on 220ms ease-out;
 }
-.sb-settings[data-gear="off"] svg {
+.sb-settings[data-spin="off"] svg {
   animation: gear-off 220ms ease-out;
 }
 
@@ -2257,13 +2282,16 @@
 .st-panel {
   animation: st-pane-in 200ms ease-out backwards;
 }
-.chat-app[data-settings-closing] .chat-sidebar-inner {
+.chat-app[data-settings-closing] .st-nav {
   animation: st-nav-out 160ms ease-in forwards;
 }
 .chat-app[data-settings-closing] .st-main {
   animation: st-pane-out 160ms ease-in forwards;
 }
-.chat-app[data-just-closed] .chat-sidebar-inner,
+/* skips .sb-footer so the band stays stable under the persistent gear */
+.chat-app[data-just-closed] .sb-nav,
+.chat-app[data-just-closed] .sb-head,
+.chat-app[data-just-closed] .sb-scroll,
 .chat-app[data-just-closed] .chat-main,
 .chat-app[data-just-closed] .apps-main {
   animation: st-return-in 200ms ease-out backwards;

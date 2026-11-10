@@ -1,7 +1,7 @@
 /* Task row: 32px line, 16px status slot (error > unread > spinner > idle;
  * pinned rows swap the slot for a pin), hover-only actions, two-click archive. */
 import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Archive, LoaderCircle, Pin } from "lucide-react";
+import { Archive, Check, LoaderCircle, Pin } from "lucide-react";
 import type { CtxItem } from "../ChatContextMenu";
 import { relTime, useI18n } from "../i18n";
 import type { Session } from "../types";
@@ -113,7 +113,7 @@ export function TaskRow({
               ops.onTogglePin(session.id);
             }}
           >
-            <Pin size={13} />
+            <Pin size={15} />
           </button>
         ) : session.status === "streaming" ? (
           <LoaderCircle size={12} className="t-spin" />
@@ -146,7 +146,7 @@ export function TaskRow({
           aria-label={archiveLabel}
           onClick={startArchive}
         >
-          {confirming ? <span className="t-confirm">{t("confirmArchive")}</span> : <Archive size={13} />}
+          {confirming ? <Check size={13} /> : <Archive size={13} />}
         </button>
       </span>
     </div>
