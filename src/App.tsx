@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { ChatApp } from "./chat/ChatApp";
 import { AppStandalone } from "./chat/apps/AppStandalone";
 import { GreetDemo } from "./greet/GreetDemo";
-import { DebugHud } from "./components/DebugHud";
 
 export default function App() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -24,7 +23,6 @@ export default function App() {
       ) : (
         <ChatApp />
       )}
-      <DebugHud />
     </>
   );
 }

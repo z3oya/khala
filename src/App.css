@@ -187,41 +187,6 @@
   border-radius: 8px;
 }
 
-/* Debug HUD: fixed pill, bottom-right; the E2E health signal. */
-.debug-hud {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #1e1f26ee;
-  color: #dfe1ea;
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: 0.72rem;
-  user-select: none;
-}
-
-.debug-hud .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.dot-online {
-  background: #43c377;
-}
-
-.dot-offline {
-  background: #e5484d;
-}
-
-.dot-checking {
-  background: #d5a63a;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     color: #e8e8ee;

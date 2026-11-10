@@ -153,7 +153,7 @@ export const initialSessions: Session[] = [
                 "src/App.tsx:47:      <h1 data-testid=\"app-title\">khala</h1>",
                 "src/App.tsx:49:      <form className=\"greet-form\" data-testid=\"greet-form\" onSubmit={submit}>",
                 "src/App.tsx:51:          data-testid=\"greet-input\"",
-                "src/components/DebugHud.tsx:38:    <aside className=\"debug-hud\" data-testid=\"debug-hud\" data-status={status}>",
+                "src/chat/SettingsView.tsx:232:    <div className=\"st-rows\" data-testid=\"chat-settings-about\">",
                 "src/chat/Sidebar.tsx:61:  <button data-testid=\"chat-new-session\"",
               ],
               hiddenLines: 6,

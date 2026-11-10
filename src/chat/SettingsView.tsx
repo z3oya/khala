@@ -2,8 +2,10 @@
  * Settings nav occupies the sidebar slot (shared width/collapse state, no
  * resizer); panel renders in the main card. Raw values stay untranslated.
  */
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Archive, Cpu, Info, Keyboard, Palette, Shield, SlidersHorizontal } from "lucide-react";
+import { api, type InfoOut } from "../api/commands";
+import { transport } from "../lib/rpc";
 import { relTime, useI18n, type MsgKey, type StringKey } from "./i18n";
 import type { Session } from "./types";
 
@@ -82,10 +84,7 @@ const SECTIONS: Section[] = [
     labelKey: "stAbout",
     descKey: "stAboutDesc",
     icon: Info,
-    rows: [
-      ["rowVersion", { raw: "v0.1.0" }],
-      ["rowTransport", { key: "valMock" }],
-    ],
+    rows: [],
   },
 ];
 
@@ -196,6 +195,74 @@ function ArchivePanel({
   );
 }
 
+/* Polls khala-server while mounted (About section only); offline honestly
+ * reflects a backend-less mock run. Raw version/transport stay untranslated. */
+const ABOUT_POLL_MS = 4000;
+
+function AboutPanel() {
+  const { t } = useI18n();
+  const [info, setInfo] = useState<InfoOut | null>(null);
+  const [rttMs, setRttMs] = useState<number | null>(null);
+  const [online, setOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      const started = performance.now();
+      try {
+        const next = await api.info();
+        if (!alive) return;
+        setInfo(next);
+        setRttMs(Math.round(performance.now() - started));
+        setOnline(true);
+      } catch {
+        if (alive) setOnline(false);
+      }
+    };
+    void tick();
+    const timer = window.setInterval(tick, ABOUT_POLL_MS);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const status = online === null ? "checking" : online ? "online" : "offline";
+  return (
+    <div className="st-rows" data-testid="chat-settings-about">
+      <div className="st-row">
+        <span className="st-row-label">{t("rowStatus")}</span>
+        <span
+          className="chip"
+          data-testid="chat-settings-about-status"
+          data-state={status}
+        >
+          <span className={`st-dot st-dot-${status}`} />
+          {t(status === "online" ? "valOnline" : status === "offline" ? "valOffline" : "valChecking")}
+        </span>
+      </div>
+      <div className="st-row">
+        <span className="st-row-label">{t("rowVersion")}</span>
+        <span className="chip" data-testid="chat-settings-about-version">
+          {info ? `v${info.version}(${info.gitHash})` : "v?"}
+        </span>
+      </div>
+      <div className="st-row">
+        <span className="st-row-label">{t("rowTransport")}</span>
+        <span className="chip" data-testid="chat-settings-about-transport">
+          {transport()}
+        </span>
+      </div>
+      <div className="st-row">
+        <span className="st-row-label">{t("rowRtt")}</span>
+        <span className="chip" data-testid="chat-settings-about-rtt">
+          {online ? `${rttMs ?? "?"}ms` : "--"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPanel({
   activeId,
   archived,
@@ -220,6 +287,7 @@ export function SettingsPanel({
         {active.id === "archive" && (
           <ArchivePanel archived={archived} onRestore={onRestoreArchive} onDeleteForever={onDeleteArchive} />
         )}
+        {active.id === "about" && <AboutPanel />}
         <div className="st-rows">
           {active.id === "general" && (
             <div className="st-row" data-testid="chat-settings-language-row">

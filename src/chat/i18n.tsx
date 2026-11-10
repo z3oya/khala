@@ -134,7 +134,7 @@ const zh = {
   stArchive: "归档",
   stArchiveDesc: "已归档任务的还原与清理",
   stAbout: "关于",
-  stAboutDesc: "版本与传输信息",
+  stAboutDesc: "版本、传输与连接状态",
   rowDefaultView: "默认视图",
   rowLanguage: "界面语言",
   rowFontSize: "字体大小",
@@ -149,8 +149,10 @@ const zh = {
   rowSend: "发送消息",
   rowNewline: "换行",
   rowStop: "停止生成",
+  rowStatus: "服务状态",
   rowVersion: "版本",
   rowTransport: "传输",
+  rowRtt: "延迟",
   valChat: "聊天",
   valStandard: "标准",
   valHigh: "高",
@@ -159,7 +161,9 @@ const zh = {
   valOn: "开启",
   valRecords: "{n} 条",
   valStopButton: "停止按钮",
-  valMock: "mock (纯前端)",
+  valOnline: "在线",
+  valOffline: "离线",
+  valChecking: "检测中",
 };
 
 type Dict = typeof zh;
@@ -297,7 +301,7 @@ const en: Dict = {
   stArchive: "Archive",
   stArchiveDesc: "Restore or purge archived tasks",
   stAbout: "About",
-  stAboutDesc: "Version and transport",
+  stAboutDesc: "Version, transport and connection status",
   rowDefaultView: "Default view",
   rowLanguage: "Interface language",
   rowFontSize: "Font size",
@@ -312,8 +316,10 @@ const en: Dict = {
   rowSend: "Send message",
   rowNewline: "Newline",
   rowStop: "Stop generating",
+  rowStatus: "Service status",
   rowVersion: "Version",
   rowTransport: "Transport",
+  rowRtt: "Latency",
   valChat: "Chat",
   valStandard: "Standard",
   valHigh: "High",
@@ -322,7 +328,9 @@ const en: Dict = {
   valOn: "On",
   valRecords: "{n} records",
   valStopButton: "Stop button",
-  valMock: "mock (frontend only)",
+  valOnline: "online",
+  valOffline: "offline",
+  valChecking: "checking",
 };
 
 export type MsgKey = keyof Dict;

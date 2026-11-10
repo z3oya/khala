@@ -1694,6 +1694,23 @@
   color: var(--text-1);
 }
 
+/* About service-status dot (ex-DebugHud online pill). */
+.st-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.st-dot-online {
+  background: var(--ok);
+}
+.st-dot-offline {
+  background: var(--err);
+}
+.st-dot-checking {
+  background: var(--warn);
+}
+
 .lang-options {
   display: inline-flex;
   gap: 6px;
