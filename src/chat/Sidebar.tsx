@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   AppWindow,
+  Bot,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -297,6 +298,10 @@ export function Sidebar({
           <button type="button" className="sb-action" data-testid="chat-new-plugin" title={`${t("plugins")} (mock)`}>
             <Puzzle size={13} />
             {t("plugins")}
+          </button>
+          <button type="button" className="sb-action" data-testid="chat-new-assistant" title={`${t("assistant")} (mock)`}>
+            <Bot size={13} />
+            {t("assistant")}
           </button>
         </div>
 
