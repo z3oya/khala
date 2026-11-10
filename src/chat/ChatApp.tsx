@@ -16,7 +16,7 @@ import type { View } from "./types";
 import "./tokens.css";
 import "./chat.css";
 
-const DEFAULT_SIDEBAR_WIDTH = 264;
+const DEFAULT_SIDEBAR_WIDTH = 396;
 
 export function ChatApp() {
   return (

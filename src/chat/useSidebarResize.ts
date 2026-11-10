@@ -5,7 +5,7 @@
 import { useCallback } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
-export const MIN_SIDEBAR_WIDTH = 260;
+export const MIN_SIDEBAR_WIDTH = 320;
 
 interface Options {
   width: number;
