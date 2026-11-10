@@ -1,16 +1,66 @@
 /* Auto-follows the stream unless the user scrolls away. */
-import { useLayoutEffect, useRef } from "react";
-import { Feather } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { Feather, File, Folder, MessagesSquare, SquareSlash, WandSparkles } from "lucide-react";
 import type { PermissionDecision, Session } from "./types";
 import { localeOf, useI18n } from "./i18n";
 import { Markdown } from "./blocks/Markdown";
 import { ThinkingBlockView } from "./blocks/ThinkingBlock";
 import { ToolCardView } from "./blocks/ToolCard";
 import { PermissionCard } from "./blocks/PermissionCard";
+import { getPromptMentionClassNames } from "./mentions/mentionChip";
+import {
+  formatSkillMentionDisplayLabel,
+  parseMentionMarkdown,
+  type MentionTextPart,
+} from "./mentions/mentionMarkdown";
+import type { MentionCategory } from "./mentions/mentionTypes";
 
 interface Props {
   session: Session;
   onResolvePermission: (messageId: string, blockId: string, decision: PermissionDecision) => void;
+}
+
+function MentionPartIcon({
+  type,
+}: {
+  type: Exclude<MentionTextPart, { type: "text" }>["type"];
+}) {
+  if (type === "directory") return <Folder aria-hidden="true" size={14} className="mention-bubble-icon" />;
+  if (type === "file") return <File aria-hidden="true" size={14} className="mention-bubble-icon" />;
+  if (type === "skill") return <WandSparkles aria-hidden="true" size={14} className="mention-bubble-icon" />;
+  if (type === "session") return <MessagesSquare aria-hidden="true" size={14} className="mention-bubble-icon" />;
+  return <SquareSlash aria-hidden="true" size={14} className="mention-bubble-icon" />;
+}
+
+const PART_CATEGORY: Record<Exclude<MentionTextPart, { type: "text" }>["type"], MentionCategory> = {
+  file: "files",
+  directory: "files",
+  skill: "skills",
+  command: "commands",
+  session: "sessions",
+};
+
+/** User-bubble mention chips; class composition is shared with the editor chips. */
+function UserText({ markdown }: { markdown: string }) {
+  const parts = useMemo(() => parseMentionMarkdown(markdown), [markdown]);
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.type === "text") return <span key={index}>{part.text}</span>;
+        const category = PART_CATEGORY[part.type];
+        return (
+          <span
+            key={index}
+            className={getPromptMentionClassNames(category)}
+            data-mention-category={category}
+          >
+            <MentionPartIcon type={part.type} />
+            {part.type === "skill" ? formatSkillMentionDisplayLabel(part.label) : part.label}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 function clock(ms: number, locale: string): string {
@@ -57,7 +107,9 @@ export function MessageList({ session, onResolvePermission }: Props) {
               data-streaming="false"
             >
               <div className="user-bubble" data-testid="chat-user-bubble">
-                {message.blocks.map((b) => (b.kind === "text" ? b.markdown : "")).join("\n")}
+                {message.blocks.map((b) =>
+                  b.kind === "text" ? <UserText key={b.id} markdown={b.markdown} /> : null,
+                )}
               </div>
               <div className="msg-meta-row">{clock(message.atMs, localeOf(lang))}</div>
             </div>

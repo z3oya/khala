@@ -1,5 +1,5 @@
 /* Chat shell; root data-* attributes are agent assertion anchors. */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bot, Puzzle, Settings, Workflow } from "lucide-react";
 import { useMockChat } from "./useMockChat";
 import { I18nProvider, useI18n } from "./i18n";
@@ -90,6 +90,11 @@ function ChatShell() {
 
   const composerValue = isDraft ? (draft?.text ?? "") : input;
   const setComposerValue = (v: string) => (isDraft ? updateDraftText(v) : setInput(v));
+  /* # panel candidates: lightweight projection keeps the array reference stable. */
+  const sessionRefs = useMemo(
+    () => sessions.map((s) => ({ id: s.id, title: s.title })),
+    [sessions],
+  );
 
   const doSend = () => {
     send(composerValue);
@@ -277,6 +282,7 @@ function ChatShell() {
                         streaming={streaming}
                         centered
                         historyKey={activeSession?.id ?? "draft"}
+                        sessions={sessionRefs}
                       />
                     }
                     onPick={pickSuggestion}
@@ -300,6 +306,7 @@ function ChatShell() {
                         onStop={stop}
                         streaming={streaming}
                         historyKey={activeSession.id}
+                        sessions={sessionRefs}
                         queue={queued}
                         onRemoveQueued={(i) => removeQueued(activeSession.id, i)}
                         queuePaused={queuePaused}

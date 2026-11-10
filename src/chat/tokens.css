@@ -44,6 +44,12 @@
   --dot-unread: #0ea5e9;
   --tag: rgba(23, 23, 28, 0.06); /* count badges, kbd chips */
 
+  /* Mention chips are pure text color, no fills. */
+  --mention-file-fg: #0284c7;
+  --mention-skill-fg: #7c3aed;
+  --mention-command-fg: #d97706;
+  --mention-session-fg: #0d9488;
+
   /* Type */
   --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
   --fs-ui: 14px;
