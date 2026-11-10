@@ -101,10 +101,11 @@ interface NavProps {
   onSelect: (id: string) => void;
   width: number;
   collapsed: boolean;
+  closing: boolean;
   onBack: () => void;
 }
 
-export function SettingsSidebar({ activeId, onSelect, width, collapsed, onBack }: NavProps) {
+export function SettingsSidebar({ activeId, onSelect, width, collapsed, closing, onBack }: NavProps) {
   const { t } = useI18n();
 
   return (
@@ -114,9 +115,9 @@ export function SettingsSidebar({ activeId, onSelect, width, collapsed, onBack }
       data-testid="chat-settings-sidebar"
       data-width={Math.round(collapsed ? 0 : width)}
     >
-      <div className="chat-sidebar-inner">
+      <div className="chat-sidebar-inner" inert={closing ? true : undefined} aria-hidden={closing}>
         <nav className="st-nav" aria-label={t("stNav")}>
-          {SECTIONS.map((s) => {
+          {SECTIONS.map((s, i) => {
             const Icon = s.icon;
             const isActive = s.id === activeId;
             return (
@@ -128,6 +129,7 @@ export function SettingsSidebar({ activeId, onSelect, width, collapsed, onBack }
                 data-section={s.id}
                 data-active={isActive}
                 aria-current={isActive ? "true" : undefined}
+                style={{ animationDelay: `${i * 24}ms` }}
                 onClick={() => onSelect(s.id)}
               >
                 <Icon size={15} />
@@ -209,11 +211,13 @@ function ArchivePanel({
 export function SettingsPanel({
   activeId,
   archived,
+  closing,
   onRestoreArchive,
   onDeleteArchive,
 }: {
   activeId: string;
   archived: Session[];
+  closing: boolean;
   onRestoreArchive: (id: string) => void;
   onDeleteArchive: (id: string) => void;
 }) {
@@ -221,8 +225,8 @@ export function SettingsPanel({
   const active = SECTIONS.find((s) => s.id === activeId) ?? SECTIONS[0];
 
   return (
-    <main className="st-main">
-      <div className="st-panel" data-testid="chat-settings-panel" data-section={active.id}>
+    <main className="st-main" inert={closing ? true : undefined} aria-hidden={closing}>
+      <div key={active.id} className="st-panel" data-testid="chat-settings-panel" data-section={active.id}>
         <h2 className="st-title">{t(active.labelKey)}</h2>
         <p className="st-desc">{t(active.descKey)}</p>
         {active.id === "archive" && (

@@ -723,6 +723,13 @@
 .sb-settings {
   color: var(--text-2);
 }
+.sb-settings[aria-pressed="true"] {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+.sb-settings[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--surface-3);
+}
 
 /* ---------- dialogs ---------- */
 .modal-overlay {
@@ -2196,6 +2203,70 @@
 .send-icon {
   display: inline-flex;
   animation: icon-swap 150ms ease-out;
+}
+
+@keyframes gear-on {
+  from {
+    transform: rotate(-120deg);
+  }
+}
+@keyframes gear-off {
+  from {
+    transform: rotate(120deg);
+  }
+}
+.sb-settings[aria-pressed="true"] svg {
+  animation: gear-on 220ms ease-out;
+}
+.sb-settings[data-gear="off"] svg {
+  animation: gear-off 220ms ease-out;
+}
+
+@keyframes st-nav-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes st-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes st-nav-out {
+  to {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+@keyframes st-pane-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes st-return-in {
+  from {
+    opacity: 0;
+  }
+}
+.st-nav-item {
+  animation: st-nav-in 160ms ease-out backwards;
+}
+.st-panel {
+  animation: st-pane-in 200ms ease-out backwards;
+}
+.chat-app[data-settings-closing] .chat-sidebar-inner {
+  animation: st-nav-out 160ms ease-in forwards;
+}
+.chat-app[data-settings-closing] .st-main {
+  animation: st-pane-out 160ms ease-in forwards;
+}
+.chat-app[data-just-closed] .chat-sidebar-inner,
+.chat-app[data-just-closed] .chat-main,
+.chat-app[data-just-closed] .apps-main {
+  animation: st-return-in 200ms ease-out backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

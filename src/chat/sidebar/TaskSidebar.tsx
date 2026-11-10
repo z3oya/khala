@@ -39,6 +39,7 @@ interface Props {
   onToggleProjectPin: (id: string) => void;
   onOpenSettings: () => void;
   onOpenApps: () => void;
+  settingsJustClosed: boolean;
   width: number;
   collapsed: boolean;
   dragging: boolean;
@@ -78,6 +79,7 @@ export function TaskSidebar(props: Props) {
     onToggleProjectPin,
     onOpenSettings,
     onOpenApps,
+    settingsJustClosed,
     width,
     collapsed,
     dragging,
@@ -260,6 +262,7 @@ export function TaskSidebar(props: Props) {
             type="button"
             className="sb-settings"
             data-testid="chat-settings"
+            data-gear={settingsJustClosed ? "off" : undefined}
             title={t("openSettings")}
             aria-label={t("openSettings")}
             onClick={onOpenSettings}

@@ -17,6 +17,9 @@ import "./tokens.css";
 import "./chat.css";
 
 const DEFAULT_SIDEBAR_WIDTH = 396;
+/* Holds must outlast the st-*-out / st-return-in durations in chat.css. */
+const SETTINGS_EXIT_MS = 180;
+const CHAT_RETURN_MS = 240;
 
 export function ChatApp() {
   return (
@@ -92,8 +95,23 @@ function ChatShell() {
   /* Sidebar 'Apps' entry toggles workspace <-> apps page. */
   const toggleApps = () => setView((v) => (v === "apps" ? "chat" : "apps"));
   /* Settings is one-way per button: workspace entry opens, settings footer returns. */
+  const [settingsJustClosed, setSettingsJustClosed] = useState(false);
+  const [settingsClosing, setSettingsClosing] = useState(false);
   const openSettings = () => setView("settings");
-  const closeSettings = () => setView("chat");
+  const closeSettings = () => {
+    if (settingsClosing) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setView("chat");
+      return;
+    }
+    setSettingsClosing(true);
+    window.setTimeout(() => {
+      setSettingsClosing(false);
+      setSettingsJustClosed(true);
+      setView("chat");
+      window.setTimeout(() => setSettingsJustClosed(false), CHAT_RETURN_MS);
+    }, SETTINGS_EXIT_MS);
+  };
   const buildInChat = () => {
     setView("chat");
     setComposerValue(t("appsBuildPrompt"));
@@ -143,6 +161,7 @@ function ChatShell() {
     onToggleProjectPin: toggleProjectPin,
     onOpenSettings: openSettings,
     onOpenApps: toggleApps,
+    settingsJustClosed,
     width: sidebarWidth,
     collapsed: sidebarCollapsed,
     dragging: sidebarDragging,
@@ -157,6 +176,8 @@ function ChatShell() {
       className={`chat-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
       data-testid="chat-root"
       data-view={view}
+      data-settings-closing={settingsClosing || undefined}
+      data-just-closed={settingsJustClosed || undefined}
       data-sidebar={sidebarCollapsed ? "collapsed" : "open"}
       data-sidebar-width={sidebarCollapsed ? 0 : Math.round(sidebarWidth)}
       data-sidebar-view={prefs.view}
@@ -179,6 +200,7 @@ function ChatShell() {
           onSelect={setSettingsSection}
           width={sidebarWidth}
           collapsed={sidebarCollapsed}
+          closing={settingsClosing}
           onBack={closeSettings}
         />
       ) : (
@@ -191,6 +213,7 @@ function ChatShell() {
           {view === "settings" ? (
             <SettingsPanel
               activeId={settingsSection}
+              closing={settingsClosing}
               archived={archivedSessions}
               onRestoreArchive={(id) => setArchived(id, false)}
               onDeleteArchive={deleteSession}
