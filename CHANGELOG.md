@@ -21,6 +21,10 @@ Guidelines:
 - Sidebar session drag sorting in the projects view; manual order persists in localStorage.
 - Drag-sort design and research docs (`docs/sidebar-dnd-*.md`).
 
+### Changed
+
+- Sidebar session rows: the relative time and the archive button now share one right-edge slot, swapping in place on hover/focus (touch shows only the button).
+
 ### Removed
 
 - "Show more / Show all" folding in task lists.

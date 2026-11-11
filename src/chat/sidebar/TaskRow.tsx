@@ -1,5 +1,6 @@
 /* Task row: 32px line, 16px status slot (error > unread > spinner > idle;
- * pinned rows swap the slot for a pin), hover-only actions, two-click archive. */
+ * pinned rows swap the slot for a pin), one right-edge tail cell shared by the
+ * time and the archive button (hover/focus swaps them), two-click archive. */
 import {
   memo,
   useCallback,
@@ -119,6 +120,7 @@ export function TaskRow({
       data-drop-pos={sortable?.dropPos}
       onClick={() => ops.onSelect(session.id, session.unreadAtMs)}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return; // inner buttons own their keys
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           ops.onSelect(session.id, session.unreadAtMs);
@@ -162,19 +164,21 @@ export function TaskRow({
           {t("pendingPermission")}
         </span>
       )}
-      <span className="t-meta">{relTime(session.updatedAtMs, lang)}</span>
-      <span className="t-actions">
-        <button
-          type="button"
-          className="t-act"
-          data-testid="task-archive"
-          data-confirming={confirming || undefined}
-          title={archiveLabel}
-          aria-label={archiveLabel}
-          onClick={startArchive}
-        >
-          {confirming ? <Check size={13} /> : <Archive size={13} />}
-        </button>
+      <span className="t-tail">
+        <span className="t-meta">{relTime(session.updatedAtMs, lang)}</span>
+        <span className="t-actions">
+          <button
+            type="button"
+            className="t-act"
+            data-testid="task-archive"
+            data-confirming={confirming || undefined}
+            title={archiveLabel}
+            aria-label={archiveLabel}
+            onClick={startArchive}
+          >
+            {confirming ? <Check size={13} /> : <Archive size={13} />}
+          </button>
+        </span>
       </span>
     </div>
   );

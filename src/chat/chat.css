@@ -533,19 +533,29 @@
   font-size: var(--fs-xs);
   line-height: 1.4;
 }
-.t-meta {
+/* Time and actions stack in one right-edge cell: the swap never shifts the title. */
+.t-tail {
   flex: none;
+  display: grid;
+  align-items: center;
+  justify-items: end;
+}
+.t-tail > * {
+  grid-area: 1 / 1;
+}
+.t-meta {
   color: var(--text-3);
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
+  transition: opacity 150ms ease-out;
 }
 .t-row.active .t-meta {
   color: var(--text-2);
 }
 .t-actions {
-  flex: none;
   display: inline-flex;
   opacity: 0;
+  pointer-events: none; /* hidden button overlays the time — must not swallow clicks */
   transition: opacity 150ms ease-out;
 }
 .t-act {
@@ -566,13 +576,15 @@
   box-shadow: inset 0 0 0 1px var(--err);
 }
 .t-row:hover .t-meta,
-.t-row:focus-within .t-meta {
-  display: none;
+.t-row:focus-within .t-meta,
+.t-row.confirming .t-meta {
+  opacity: 0;
 }
 .t-row:hover .t-actions,
 .t-row:focus-within .t-actions,
 .t-row.confirming .t-actions {
   opacity: 1;
+  pointer-events: auto;
 }
 .t-draft {
   color: var(--text-3);
@@ -585,6 +597,13 @@
   .t-actions,
   .p-actions {
     opacity: 1;
+  }
+  /* Shared tail cell: keep the touch affordance, drop the time. */
+  .t-row .t-actions {
+    pointer-events: auto;
+  }
+  .t-row .t-meta {
+    opacity: 0;
   }
 }
 
@@ -622,10 +641,11 @@
 [data-drag-active] .t-row:hover .t-actions,
 [data-drag-active] .t-row:focus-within .t-actions {
   opacity: 0;
+  pointer-events: none;
 }
 [data-drag-active] .t-row:hover .t-meta,
 [data-drag-active] .t-row:focus-within .t-meta {
-  display: inline;
+  opacity: 1;
 }
 /* Test-observable singleton only; the visual indicator is drawn by the row. */
 [data-testid="task-drop-indicator"] {
@@ -880,6 +900,7 @@
 .archived-row .t-title {
   font-size: 13.5px;
 }
+.archived-row .t-meta,
 .archived-row .cbtn {
   flex: none;
 }
