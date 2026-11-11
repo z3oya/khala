@@ -157,7 +157,7 @@ function ArchivePanel({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   if (archived.length === 0) {
     return (
-      <div className="modal-empty" data-testid="chat-settings-archive-empty">
+      <div className="st-empty" data-testid="chat-settings-archive-empty">
         {t("archivedEmpty")}
       </div>
     );
@@ -166,17 +166,16 @@ function ArchivePanel({
     <div className="archived-list" data-testid="chat-settings-archive" data-count={archived.length}>
       {archived.map((s) => (
         <div key={s.id} className="archived-row" data-testid="task-archived-row" data-id={s.id}>
-          <span className="t-slot" aria-hidden />
           <span className="t-title" title={s.title}>
             {s.title}
           </span>
           <span className="t-meta">{relTime(s.updatedAtMs, lang)}</span>
-          <button type="button" className="cbtn cbtn-ghost modal-mini" data-testid="task-restore" onClick={() => onRestore(s.id)}>
+          <button type="button" className="archived-act" data-testid="task-restore" onClick={() => onRestore(s.id)}>
             {t("restore")}
           </button>
           <button
             type="button"
-            className="cbtn modal-danger modal-mini"
+            className="archived-act archived-act-danger"
             data-testid="task-delete-forever"
             data-confirming={confirmingId === s.id || undefined}
             onClick={() => {

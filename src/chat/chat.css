@@ -872,38 +872,6 @@
 .modal-danger[data-confirming] {
   box-shadow: inset 0 0 0 1px var(--err);
 }
-.modal-mini {
-  padding: 2px 8px;
-  font-size: var(--fs-xs);
-}
-.modal-empty {
-  padding: 18px 0;
-  text-align: center;
-  color: var(--text-3);
-  font-size: 13px;
-}
-.archived-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 46vh;
-  overflow-y: auto;
-}
-.archived-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  padding: 0 4px;
-  border-radius: var(--r-md);
-}
-.archived-row .t-title {
-  font-size: 13.5px;
-}
-.archived-row .t-meta,
-.archived-row .cbtn {
-  flex: none;
-}
 
 /* ---------- main column / topbar ---------- */
 
@@ -1941,6 +1909,63 @@
   color: var(--text-1);
 }
 
+/* Archive rows: task-row hover grammar with quiet mini text actions;
+ * two-click purge keeps the err ring. */
+.archived-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.archived-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-ui);
+  color: var(--text-1);
+  transition: background-color 150ms ease-out;
+}
+.archived-row:hover {
+  background: var(--surface-hover);
+}
+.archived-row .t-meta {
+  flex: none;
+}
+.archived-act {
+  flex: none;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.archived-act:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.archived-act-danger {
+  color: var(--err);
+}
+.archived-act-danger:hover {
+  background: var(--diff-del-bg);
+  color: var(--err);
+}
+.archived-act-danger[data-confirming] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--err);
+}
+.st-empty {
+  padding: 36px 0;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13.5px;
+}
+
 /* About service-status dot (ex-DebugHud online pill). */
 .st-dot {
   flex: none;
@@ -2427,6 +2452,7 @@
 .tool-output,
 .st-nav,
 .st-main,
+.archived-list,
 .apps-scroll,
 .apps-win-body,
 .sa-pre {
