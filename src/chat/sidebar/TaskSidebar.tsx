@@ -1,6 +1,6 @@
 /* Task sidebar v4 (ZCodium project/task list): nav rows, view switcher,
  * three views, footer. Collapses stay mounted behind grid-rows + inert. */
-import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { AppWindow, Bot, Check, ListFilter, Plus, Puzzle, Search, Workflow } from "lucide-react";
 import type { CtxItem } from "../ChatContextMenu";
 import { useI18n, type MsgKey } from "../i18n";
@@ -122,17 +122,20 @@ export function TaskSidebar(props: Props) {
   }, []);
   const closeCtx = useCallback(() => setCtx(null), []);
 
-  const live = sessions.filter((s) => !s.archived);
-  const ops: TaskRowOps = {
-    activeId,
-    onSelect,
-    onTogglePin,
-    onArchive,
-    onMarkUnread,
-    onRename: setRenameId,
-    onDelete: onDeleteSession,
-    onCtx: openCtx,
-  };
+  const live = useMemo(() => sessions.filter((s) => !s.archived), [sessions]);
+  const ops: TaskRowOps = useMemo(
+    () => ({
+      activeId,
+      onSelect,
+      onTogglePin,
+      onArchive,
+      onMarkUnread,
+      onRename: setRenameId,
+      onDelete: onDeleteSession,
+      onCtx: openCtx,
+    }),
+    [activeId, onSelect, onTogglePin, onArchive, onMarkUnread, onDeleteSession, openCtx],
+  );
 
   const renameTarget = renameId !== null ? (sessions.find((s) => s.id === renameId) ?? null) : null;
 
@@ -261,6 +264,8 @@ export function TaskSidebar(props: Props) {
               expanded={prefs.expanded}
               order={prefs.order}
               onOrderChange={(order) => onPrefsChange({ order })}
+              taskOrder={prefs.taskOrder}
+              onTaskOrderChange={(taskOrder) => onPrefsChange({ taskOrder })}
               setExpanded={setExpanded}
               ops={ops}
               onNewTask={(projectId) => onNewTask(projectId)}

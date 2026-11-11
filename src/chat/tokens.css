@@ -42,6 +42,7 @@
   --surface-hover: var(--surface-2); /* 5% ink equivalent */
   --selected: var(--surface-3); /* 10% ink equivalent */
   --dot-unread: #0ea5e9;
+  --drop: #0a84c1; /* sidebar drag-drop indicator line/dot */
   --tag: rgba(23, 23, 28, 0.06); /* count badges, kbd chips */
 
   /* Mention chips are pure text color, no fills. */

@@ -65,3 +65,59 @@ export function orderedById<T extends { id: string }>(items: T[], savedOrder: st
   const rest = items.filter((i) => !saved.includes(i.id));
   return [...saved, ...rest.map((i) => i.id)].map((id) => items.find((i) => i.id === id)!);
 }
+
+/** Sidebar scope keys: `p:{projectId}` for a project's children, "unfiled" for the footer zone. */
+export const UNFILED_SCOPE = "unfiled";
+export function projectScope(projectId: string): string {
+  return `p:${projectId}`;
+}
+
+/**
+ * Manual-order merge for one drag scope: sessions absent from the saved order
+ * keep recency order (compareTasks, running-first) on top; the manual segment
+ * follows the saved sequence verbatim — inside it manual order wins over
+ * running-state so a dragged list stays put.
+ */
+export function mergeScopeOrder(sessions: Session[], savedOrder: string[]): Session[] {
+  const ids = new Set(sessions.map((s) => s.id));
+  const manual = [...new Set(savedOrder)].filter((id) => ids.has(id));
+  if (manual.length === 0) return sessions.slice().sort(compareTasks);
+  const manualSet = new Set(manual);
+  const rest = sessions.filter((s) => !manualSet.has(s.id)).sort(compareTasks);
+  const byId = new Map(sessions.map((s) => [s.id, s]));
+  return [...rest, ...manual.map((id) => byId.get(id)!)];
+}
+
+export function dropPosOf(activeIndex: number, overIndex: number): "before" | "after" {
+  return activeIndex > overIndex ? "before" : "after";
+}
+
+/** Strip stale/duplicate ids and empty scopes from persisted task orders.
+ * Returns the cleaned map, or null when nothing changed. Empty sessions (not
+ * yet loaded, or everything archived) keeps the persisted orders intact. */
+export function reconcileTaskOrder(
+  taskOrder: Record<string, string[]>,
+  sessions: Session[],
+): Record<string, string[]> | null {
+  if (sessions.length === 0) return null;
+  const liveByScope = new Map<string, Set<string>>();
+  for (const s of sessions) {
+    const key = s.projectId ? projectScope(s.projectId) : UNFILED_SCOPE;
+    const live = liveByScope.get(key) ?? new Set<string>();
+    live.add(s.id);
+    liveByScope.set(key, live);
+  }
+  let dirty = false;
+  const next: Record<string, string[]> = {};
+  for (const [key, ids] of Object.entries(taskOrder)) {
+    const live = liveByScope.get(key);
+    if (!live) {
+      dirty = true;
+      continue;
+    }
+    const kept = [...new Set(ids.filter((id) => live.has(id)))];
+    if (kept.length !== ids.length || kept.length === 0) dirty = true;
+    if (kept.length) next[key] = kept;
+  }
+  return dirty ? next : null;
+}

@@ -1,6 +1,15 @@
 /* Task row: 32px line, 16px status slot (error > unread > spinner > idle;
  * pinned rows swap the slot for a pin), hover-only actions, two-click archive. */
-import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { Archive, Check, LoaderCircle, Pin } from "lucide-react";
 import type { CtxItem } from "../ChatContextMenu";
 import { relTime, useI18n } from "../i18n";
@@ -17,6 +26,16 @@ export interface TaskRowOps {
   onCtx: (e: ReactMouseEvent, items: CtxItem[]) => void;
 }
 
+/** dnd-kit binding bag applied to the row root; absent → plain row. */
+export interface SortableBindings {
+  ref?: (node: HTMLDivElement | null) => void;
+  style?: CSSProperties;
+  attributes?: HTMLAttributes<HTMLDivElement>;
+  listeners?: HTMLAttributes<HTMLDivElement>;
+  dragging?: boolean;
+  dropPos?: "before" | "after";
+}
+
 export function hasPendingPermission(s: Session): boolean {
   return s.messages.some((m) => m.blocks.some((b) => b.kind === "permission" && !b.decision));
 }
@@ -25,10 +44,12 @@ export function TaskRow({
   session,
   ops,
   testid = "task-item",
+  sortable,
 }: {
   session: Session;
   ops: TaskRowOps;
   testid?: string;
+  sortable?: SortableBindings;
 }) {
   const { t, lang } = useI18n();
   const [confirming, setConfirming] = useState(false);
@@ -78,6 +99,10 @@ export function TaskRow({
 
   return (
     <div
+      ref={sortable?.ref}
+      style={sortable?.style}
+      {...(sortable?.attributes ?? {})}
+      {...(sortable?.listeners ?? {})}
       role="button"
       tabIndex={0}
       className={`t-row${active ? " active" : ""}${confirming ? " confirming" : ""}`}
@@ -90,6 +115,8 @@ export function TaskRow({
       data-unread={session.unreadAtMs !== undefined || undefined}
       data-waiting={waiting || undefined}
       data-active={active}
+      data-dragging={sortable?.dragging || undefined}
+      data-drop-pos={sortable?.dropPos}
       onClick={() => ops.onSelect(session.id, session.unreadAtMs)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

@@ -465,7 +465,9 @@
   font-size: var(--fs-ui);
   cursor: pointer;
   transition: background-color 150ms ease-out, color 150ms ease-out;
+  user-select: none; /* native text selection steals pointermove before dnd-kit activates */
 }
+
 .t-row:hover {
   background: var(--surface-hover);
 }
@@ -598,6 +600,68 @@
 .show-more:hover {
   background: var(--surface-hover);
   color: var(--text-1);
+}
+
+/* ---------- drag sorting ---------- */
+.sort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.sort-list .t-row {
+  position: relative; /* drop-indicator anchor */
+  touch-action: none; /* PointerSensor: pointer drags must not scroll-touch */
+}
+.t-row[data-dragging="true"] {
+  background: var(--surface-2);
+  box-shadow: var(--shadow-2);
+  cursor: grabbing;
+}
+/* Hover actions/timestamps swap stays off while a drag is live. */
+[data-drag-active] .t-row:hover .t-actions,
+[data-drag-active] .t-row:focus-within .t-actions {
+  opacity: 0;
+}
+[data-drag-active] .t-row:hover .t-meta,
+[data-drag-active] .t-row:focus-within .t-meta {
+  display: inline;
+}
+/* Test-observable singleton only; the visual indicator is drawn by the row. */
+[data-testid="task-drop-indicator"] {
+  display: none;
+}
+/* In-row drop line + left dot, fully inside the 32px box: ancestors
+   (.p-tasks / .sb-collapse-inner) clip anything outside. */
+.t-row[data-drop-pos]::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--drop);
+}
+.t-row[data-drop-pos="before"]::after {
+  top: 0;
+}
+.t-row[data-drop-pos="after"]::after {
+  bottom: 0;
+}
+.t-row[data-drop-pos]::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--drop);
+}
+.t-row[data-drop-pos="before"]::before {
+  top: 0;
+}
+.t-row[data-drop-pos="after"]::before {
+  bottom: 0;
 }
 
 .grp-head {

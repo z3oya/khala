@@ -8,14 +8,29 @@ export interface TaskSidebarPrefs {
   expanded: Record<string, boolean>;
   order: string[];
   collapsedGroups: string[];
+  /** Per-scope manual task order; key = `p:{projectId}` | "unfiled" (ordering.ts). */
+  taskOrder: Record<string, string[]>;
 }
 
 const KEY = "khala-task-sidebar-prefs";
 const LEGACY_KEY = "khala-sidebar-prefs";
-const DEFAULTS: TaskSidebarPrefs = { view: "projects", expanded: {}, order: [], collapsedGroups: [] };
+const DEFAULTS: TaskSidebarPrefs = {
+  view: "projects",
+  expanded: {},
+  order: [],
+  collapsedGroups: [],
+  taskOrder: {},
+};
 
 function isView(v: unknown): v is SidebarView {
   return v === "projects" || v === "grouped" || v === "timeline";
+}
+
+function isTaskOrder(v: unknown): v is Record<string, string[]> {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  return Object.values(v).every(
+    (list) => Array.isArray(list) && list.every((id): id is string => typeof id === "string"),
+  );
 }
 
 /* Legacy key best-effort: only chatView maps (daily → timeline). */
@@ -42,6 +57,7 @@ function read(): TaskSidebarPrefs {
       collapsedGroups: Array.isArray(p.collapsedGroups)
         ? p.collapsedGroups.filter((v): v is string => typeof v === "string")
         : [],
+      taskOrder: isTaskOrder(p.taskOrder) ? p.taskOrder : {},
     };
   } catch {
     return DEFAULTS;

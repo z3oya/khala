@@ -1,11 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useI18n } from "../i18n";
 import type { Session } from "../types";
 import type { TaskRowOps } from "./TaskRow";
 import { MemoTaskRow } from "./TaskRow";
 import { compareRecent, startOfDay, timelineKey, type TimelineKey } from "./ordering";
-
-const PAGE = 20;
 
 interface Props {
   sessions: Session[];
@@ -14,16 +12,14 @@ interface Props {
 
 export function TimelineView({ sessions, ops }: Props) {
   const { t } = useI18n();
-  const [count, setCount] = useState(PAGE);
   const today = startOfDay(Date.now());
 
   const sorted = useMemo(() => sessions.slice().sort(compareRecent), [sessions]);
-  const visible = sorted.slice(0, count);
 
   const buckets = useMemo(() => {
     const groups: [TimelineKey, Session[]][] = [];
     const map = new Map<TimelineKey, Session[]>();
-    for (const s of visible) {
+    for (const s of sorted) {
       const key = timelineKey(s.updatedAtMs, today);
       const list = map.get(key);
       if (list) list.push(s);
@@ -34,7 +30,7 @@ export function TimelineView({ sessions, ops }: Props) {
       }
     }
     return groups;
-  }, [visible, today]);
+  }, [sorted, today]);
 
   const heading = (key: TimelineKey): string => {
     if (key === "today") return t("timeToday");
@@ -61,11 +57,6 @@ export function TimelineView({ sessions, ops }: Props) {
           </div>
         </div>
       ))}
-      {visible.length < sorted.length && (
-        <button type="button" className="show-more" data-testid="task-show-more" onClick={() => setCount((c) => c + PAGE)}>
-          {t("showMore")}
-        </button>
-      )}
     </>
   );
 }

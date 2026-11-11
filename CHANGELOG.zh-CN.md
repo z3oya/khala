@@ -4,6 +4,24 @@
 
 格式依据 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+<!--
+纲领：
+- 遵循 https://keepachangelog.com/。
+- 条目仅应包括本次变更相对上一版本的净值结果，不得包含含本次变更的中间演化过程。
+- 每条可注意的变更一行，不得过度解释实现细节。
+-->
+
+## [Unreleased]
+
+### Added
+
+- 侧栏会话拖动排序（projects 视图），手排顺序持久化到 localStorage。
+- 拖拽排序设计与调研文档（`docs/sidebar-dnd-*.md`）。
+
+### Removed
+
+- 任务列表「显示更多 / 显示全部」折叠。
+
 ## [0.1.0] - 2026-11-08
 
 ### Added
