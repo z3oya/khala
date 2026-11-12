@@ -159,6 +159,8 @@ const zh = {
   stPermissionsDesc: "工具执行的审批策略",
   stShortcuts: "快捷键",
   stShortcutsDesc: "全局与输入快捷方式",
+  stGreeting: "问候",
+  stGreetingDesc: "与 Rust 后端的最简交互演示",
   stArchive: "归档",
   stArchiveDesc: "已归档任务的还原与清理",
   stAbout: "关于",
@@ -194,6 +196,10 @@ const zh = {
   valOnline: "在线",
   valOffline: "离线",
   valChecking: "检测中",
+  greetSubmit: "问候",
+  rowGreetCount: "累计问候",
+  greetTimes: "{n} 次",
+  rowLatestGreeting: "最新问候",
 };
 
 type Dict = typeof zh;
@@ -356,6 +362,8 @@ const en: Dict = {
   stPermissionsDesc: "Tool approval policy",
   stShortcuts: "Shortcuts",
   stShortcutsDesc: "Global and input shortcuts",
+  stGreeting: "Greeting",
+  stGreetingDesc: "Minimal round-trip to the Rust backend",
   stArchive: "Archive",
   stArchiveDesc: "Restore or purge archived tasks",
   stAbout: "About",
@@ -391,6 +399,10 @@ const en: Dict = {
   valOnline: "online",
   valOffline: "offline",
   valChecking: "checking",
+  greetSubmit: "Greet",
+  rowGreetCount: "Greetings sent",
+  greetTimes: "{n} times",
+  rowLatestGreeting: "Latest greeting",
 };
 
 export type MsgKey = keyof Dict;

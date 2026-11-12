@@ -2010,6 +2010,24 @@
   font-weight: 500;
 }
 
+/* Greeting panel (reuses lang-option). */
+.st-greet-actions {
+  display: flex;
+  padding: 12px 2px;
+}
+.st-greet-submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.st-greet-error {
+  margin: 0;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--border);
+  color: var(--err);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
 /* ---------- blank placeholder pages (automation / plugins / assistant) ---------- */
 
 .page-placeholder {

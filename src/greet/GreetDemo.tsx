@@ -1,49 +1,10 @@
-/*
- * The original greet demo, moved verbatim from App.tsx (testids unchanged).
- * Reachable at #/greet; the E2E walkthrough in docs/e2e.md targets it.
- */
-import { useState, type FormEvent } from "react";
+/* #/greet demo; docs/e2e.md targets these testids. */
 import { CircleAlert, History, Inbox, Send, Trash2 } from "lucide-react";
-import { api, type GreetRecord } from "../api/commands";
-import { RpcError } from "../lib/rpc";
+import { useGreet } from "./useGreet";
 import "../App.css";
 
 export function GreetDemo() {
-  const [name, setName] = useState("");
-  const [greeting, setGreeting] = useState<string | null>(null);
-  const [history, setHistory] = useState<GreetRecord[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const describe = (err: unknown) =>
-    err instanceof RpcError ? `${err.code}: ${err.message}` : String(err);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const out = await api.greet(name);
-      setGreeting(out.greeting);
-      setHistory(out.history);
-      setName("");
-    } catch (err) {
-      setError(describe(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function reset() {
-    setError(null);
-    try {
-      const out = await api.reset();
-      setHistory(out.history);
-      setGreeting(null);
-    } catch (err) {
-      setError(describe(err));
-    }
-  }
+  const { name, setName, greeting, history, error, busy, submit, reset } = useGreet();
 
   return (
     <main className="container">

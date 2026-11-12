@@ -3,9 +3,10 @@
  * resizer); panel renders in the main card. Raw values stay untranslated.
  */
 import { useEffect, useState, type ComponentType } from "react";
-import { Archive, Cpu, Info, Keyboard, Palette, Shield, SlidersHorizontal } from "lucide-react";
+import { Archive, Cpu, Hand, Info, Keyboard, Palette, Shield, SlidersHorizontal } from "lucide-react";
 import { api, type InfoOut } from "../api/commands";
 import { transport } from "../lib/rpc";
+import { useGreet } from "../greet/useGreet";
 import { relTime, useI18n, type MsgKey, type StringKey } from "./i18n";
 import type { ThemeSetting } from "./useTheme";
 import type { Session } from "./types";
@@ -71,6 +72,13 @@ const SECTIONS: Section[] = [
       ["rowNewline", { raw: "Shift+Enter" }],
       ["rowStop", { key: "valStopButton" }],
     ],
+  },
+  {
+    id: "greeting",
+    labelKey: "stGreeting",
+    descKey: "stGreetingDesc",
+    icon: Hand,
+    rows: [],
   },
   {
     id: "archive",
@@ -203,6 +211,47 @@ function ArchivePanel({
   );
 }
 
+/* Rows read Rust-side state: the count is the backend's greet history length. */
+function GreetingPanel() {
+  const { t } = useI18n();
+  const { greeting, history, error, busy, send } = useGreet();
+
+  return (
+    <div className="st-rows" data-testid="chat-settings-greet">
+      <div className="st-row">
+        <span className="st-row-label">{t("rowGreetCount")}</span>
+        <span className="chip" data-testid="chat-settings-greet-count">
+          {t("greetTimes").replace("{n}", String(history.length))}
+        </span>
+      </div>
+      {greeting && !error && (
+        <div className="st-row">
+          <span className="st-row-label">{t("rowLatestGreeting")}</span>
+          <span className="chip" data-testid="chat-settings-greet-result">
+            {greeting}
+          </span>
+        </div>
+      )}
+      {error && (
+        <p className="st-greet-error" data-testid="chat-settings-greet-error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="st-greet-actions">
+        <button
+          type="button"
+          className="lang-option st-greet-submit"
+          data-testid="chat-settings-greet-submit"
+          disabled={busy}
+          onClick={() => void send("khala")}
+        >
+          {t("greetSubmit")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* Polls khala-server while mounted (About section only); offline honestly
  * reflects a backend-less mock run. Raw version/transport stay untranslated. */
 const ABOUT_POLL_MS = 4000;
@@ -297,6 +346,7 @@ export function SettingsPanel({
         {active.id === "archive" && (
           <ArchivePanel archived={archived} onRestore={onRestoreArchive} onDeleteForever={onDeleteArchive} />
         )}
+        {active.id === "greeting" && <GreetingPanel />}
         {active.id === "about" && <AboutPanel />}
         <div className="st-rows">
           {active.id === "general" && (
