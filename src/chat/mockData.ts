@@ -37,6 +37,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-ui-first",
     title: "UI 首版 · 灰阶设计",
+    titleOverridden: false,
+    createdAtMs: now - 95 * min,
     projectId: "p-khala",
     pinned: true,
     archived: false,
@@ -233,6 +235,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-e2e",
     title: "E2E 双传输联调",
+    titleOverridden: false,
+    createdAtMs: now - 8 * min,
     projectId: "p-khala",
     groupId: "g-hot",
     pinned: false,
@@ -293,6 +297,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-perm",
     title: "权限卡交互走查",
+    titleOverridden: false,
+    createdAtMs: now - 13 * min,
     projectId: "p-khala",
     pinned: false,
     archived: false,
@@ -325,6 +331,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-clippy",
     title: "clippy 告警清理",
+    titleOverridden: false,
+    createdAtMs: now - 80 * min,
     projectId: "p-khala",
     pinned: false,
     archived: false,
@@ -338,6 +346,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-goose",
     title: "goose 侧栏结构调研",
+    titleOverridden: false,
+    createdAtMs: now - 26 * hour - 5 * min,
     projectId: "p-goose",
     pinned: true,
     archived: false,
@@ -375,6 +385,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-dnd",
     title: "dnd-kit 拖拽排序预研",
+    titleOverridden: false,
+    createdAtMs: now - 3 * day - 4 * min,
     projectId: "p-goose",
     groupId: "g-research",
     pinned: false,
@@ -389,6 +401,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-migrate",
     title: "博客迁移脚本",
+    titleOverridden: false,
+    createdAtMs: now - 6 * day - 2 * min,
     projectId: "p-blog",
     pinned: false,
     archived: true,
@@ -402,6 +416,8 @@ export const initialSessions: Session[] = [
   {
     id: "s-theme",
     title: "暗色主题配色草案",
+    titleOverridden: false,
+    createdAtMs: now - 8 * day - 3 * min,
     projectId: "p-blog",
     pinned: false,
     archived: true,
@@ -415,6 +431,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-models",
     title: "GLM 与本地模型选型",
+    titleOverridden: false,
+    createdAtMs: now - 2 * hour - 3 * min,
     groupId: "g-research",
     pinned: false,
     archived: false,
@@ -451,6 +469,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-regex",
     title: "正则速查",
+    titleOverridden: false,
+    createdAtMs: now - 5 * hour - 2 * min,
     pinned: false,
     archived: false,
     unreadAtMs: now - 5 * hour,
@@ -487,6 +507,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-toolcards",
     title: "工具卡分型样例",
+    titleOverridden: false,
+    createdAtMs: now - 51 * min,
     pinned: false,
     archived: false,
     status: "idle",
@@ -581,6 +603,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-collapsible",
     title: "折叠动画性能调优",
+    titleOverridden: false,
+    createdAtMs: now - 20 * hour - 2 * min,
     pinned: false,
     archived: false,
     status: "idle",
@@ -593,6 +617,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-prefs",
     title: "侧栏偏好持久化方案",
+    titleOverridden: false,
+    createdAtMs: now - 2 * day - 6 * hour,
     pinned: false,
     archived: false,
     status: "idle",
@@ -605,6 +631,8 @@ export const initialSessions: Session[] = [
   {
     id: "c-marquee",
     title: "标题跑马灯的降级策略与遮罩细节复核",
+    titleOverridden: false,
+    createdAtMs: now - 9 * day - 2 * min,
     pinned: false,
     archived: false,
     status: "idle",
@@ -617,13 +645,14 @@ export const initialSessions: Session[] = [
 ];
 
 /*
- * ?mock=showcase seed (streaming/queue seeds live in useMockChat). Last
- * block must stay text — the caret only renders on a trailing text block
- * (MessageList). No projectId → unfiled zone.
+ * ?mock=showcase seed. Last block must stay text — the caret only renders
+ * on a trailing text block (MessageList). No projectId → unfiled zone.
  */
-export const SHOWCASE_SESSION: Session = {
+const SHOWCASE_SESSION: Session = {
   id: "s-showcase",
   title: "全块型样例",
+  titleOverridden: false,
+  createdAtMs: now - 30_000,
   pinned: false,
   archived: false,
   status: "streaming",
@@ -752,4 +781,12 @@ export const SHOWCASE_SESSION: Session = {
       ],
     },
   ],
+};
+
+/** ?mock=showcase seed: the session plus its seeded paused queue (the lever
+ * into the live flow). */
+export const SHOWCASE_SEED: { session: Session; queue: string[]; queuePaused: boolean } = {
+  session: SHOWCASE_SESSION,
+  queue: ["再列一下剩余风险"],
+  queuePaused: true,
 };

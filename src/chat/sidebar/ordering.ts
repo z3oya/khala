@@ -3,15 +3,11 @@ import type { Session } from "../types";
 
 export const DAY = 86_400_000;
 
-export function createdAtMs(s: Session): number {
-  return s.messages[0]?.atMs ?? s.updatedAtMs;
-}
-
 export function compareTasks(a: Session, b: Session): number {
   const aRun = a.status === "streaming";
   const bRun = b.status === "streaming";
   if (aRun !== bRun) return aRun ? -1 : 1;
-  if (aRun && bRun) return createdAtMs(b) - createdAtMs(a);
+  if (aRun && bRun) return b.createdAtMs - a.createdAtMs;
   return b.updatedAtMs - a.updatedAtMs;
 }
 

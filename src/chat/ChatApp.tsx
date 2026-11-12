@@ -19,7 +19,7 @@ import type { PlaceholderPage, View } from "./types";
 import "./tokens.css";
 import "./chat.css";
 
-/* URL params, read once at module load like useMockChat's ?mock=
+/* URL params, read once at module load
  * (?shot=1 static mode, ?settings=<section> deep link). */
 const PARAMS = new URLSearchParams(window.location.search);
 const SHOT = PARAMS.get("shot") === "1";

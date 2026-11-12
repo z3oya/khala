@@ -107,11 +107,14 @@ export interface ChatMessage {
   streaming?: boolean;
 }
 
-export interface Session {
+/** Persistable session attributes — the DTO line; drop status/messages to serialize. */
+export interface SessionMeta {
   id: string;
   title: string;
   /** Set by manual rename so an auto-title never clobbers it. */
-  titleOverridden?: boolean;
+  titleOverridden: boolean;
+  createdAtMs: number;
+  updatedAtMs: number;
   projectId?: string;
   groupId?: string;
   pinned: boolean;
@@ -119,8 +122,11 @@ export interface Session {
   /** Unread marker; cleared on select via expected-value compare. */
   unreadAtMs?: number;
   changeSummary?: ChangeSummary;
+}
+
+/** Full in-memory session: meta + display status + transcript. */
+export interface Session extends SessionMeta {
   status: SessionStatus;
-  updatedAtMs: number;
   messages: ChatMessage[];
 }
 
