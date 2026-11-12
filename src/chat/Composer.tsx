@@ -427,7 +427,7 @@ export function Composer({
               </button>
             </span>
           ))}
-          {queuePaused && onResumeQueue && (
+          {queuePaused && !streaming && onResumeQueue && (
             <button
               type="button"
               className="chip chip-btn queue-resume"

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { resolveApp } from "./appsStore";
 import { APP_MIN_SIZE } from "./appLauncher";
 import { I18nProvider } from "../i18n";
+import { useTheme } from "../useTheme";
 import "../tokens.css";
 import "../chat.css";
 
@@ -18,6 +19,9 @@ export function AppStandalone({ appId }: { appId: string }) {
 
 function StandaloneBody({ appId }: { appId: string }) {
   const app = resolveApp(appId);
+  /* Separate document: activates the <html data-theme> effect so this window
+   * follows main-window theme switches via the storage event. */
+  useTheme();
 
   useEffect(() => {
     document.title = app ? app.name : "khala app";

@@ -1,13 +1,14 @@
 /*
  * Mock chat state machine: sessions + a scripted reply with typewriter
- * streaming. `?mock=instant` collapses every delay for deterministic E2E.
+ * streaming. `?mock=instant` collapses every delay; `?mock=showcase` seeds the
+ * all-block-types session (comma-combinable, e.g. ?mock=instant,showcase).
  * Each streaming session owns a CancelToken and a permission-waiter map;
  * aborting resolves the waiters with null so the script coroutine unwinds.
  *
  * newTask() drafts become sessions only on first send.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { initialGroups, initialProjects, initialSessions } from "./mockData";
+import { initialGroups, initialProjects, initialSessions, SHOWCASE_SESSION } from "./mockData";
 import type {
   ChatMessage,
   ContentBlock,
@@ -20,7 +21,12 @@ import type {
 } from "./types";
 import { diffStats } from "./types";
 
-const INSTANT = new URLSearchParams(window.location.search).get("mock") === "instant";
+const MOCK = (new URLSearchParams(window.location.search).get("mock") ?? "")
+  .split(",")
+  .map((v) => v.trim());
+const INSTANT = MOCK.includes("instant");
+const SHOWCASE = MOCK.includes("showcase");
+const SEED_SESSIONS = SHOWCASE ? [SHOWCASE_SESSION, ...initialSessions] : initialSessions;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, INSTANT ? 0 : ms));
 const uid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 9)}`;
@@ -46,19 +52,31 @@ function mostRecentSession(sessions: Session[]): Session | undefined {
 }
 
 export function useMockChat() {
-  const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [sessions, setSessions] = useState<Session[]>(SEED_SESSIONS);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   /* activeId === null implies draft !== null. */
-  const [activeId, setActiveId] = useState<string | null>(initialSessions[0].id);
+  const [activeId, setActiveId] = useState<string | null>(SEED_SESSIONS[0].id);
   const [draft, setDraft] = useState<Draft | null>(null);
   // Session.status mirrors "streaming" for the sidebar markers; the two are
   // written together only via send/closeStream.
-  const [streamingIds, setStreamingIds] = useState<ReadonlySet<string>>(new Set());
+  const [streamingIds, setStreamingIds] = useState<ReadonlySet<string>>(
+    () => (SHOWCASE ? new Set([SHOWCASE_SESSION.id]) : new Set()),
+  );
   /* messages sent while streaming, dispatched head-first on idle */
-  const [queues, setQueues] = useState<Record<string, string[]>>({});
-  const [queuePaused, setQueuePaused] = useState<ReadonlySet<string>>(new Set());
+  const [queues, setQueues] = useState<Record<string, string[]>>(() =>
+    SHOWCASE ? { [SHOWCASE_SESSION.id]: ["再列一下剩余风险"] } : {},
+  );
+  /* Showcase tableau: queue seeded paused so stop() stays a bounded wrap-up;
+   * chat-queue-resume (after stop) is the lever into the live flow. */
+  const [queuePaused, setQueuePaused] = useState<ReadonlySet<string>>(
+    () => (SHOWCASE ? new Set([SHOWCASE_SESSION.id]) : new Set()),
+  );
 
-  const tokensRef = useRef(new Map<string, CancelToken>());
+  /* Dead token keeps the seeded stream routable like a live one: direct sends
+   * queue instead of starting a concurrent reply. */
+  const tokensRef = useRef(
+    new Map<string, CancelToken>(SHOWCASE ? [[SHOWCASE_SESSION.id, { cancelled: true }]] : []),
+  );
   const waitersRef = useRef(new Map<string, Map<string, (d: PermissionDecision | null) => void>>());
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;

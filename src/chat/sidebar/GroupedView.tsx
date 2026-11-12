@@ -7,13 +7,13 @@ import { MemoTaskRow } from "./TaskRow";
 import { compareTasks } from "./ordering";
 
 const GROUP_COLORS: Record<GroupColor, string> = {
-  gray: "#9b9ba1",
-  red: "#d76a77",
-  orange: "#d98e4a",
-  yellow: "#c2a94e",
-  green: "#4c9a6a",
-  blue: "#5595c9",
-  purple: "#8f7fc7",
+  gray: "var(--grp-gray)",
+  red: "var(--grp-red)",
+  orange: "var(--grp-orange)",
+  yellow: "var(--grp-yellow)",
+  green: "var(--grp-green)",
+  blue: "var(--grp-blue)",
+  purple: "var(--grp-purple)",
 };
 
 interface Props {

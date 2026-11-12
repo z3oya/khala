@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 
 export interface CtxItem {
   key: string;
@@ -7,6 +7,12 @@ export interface CtxItem {
   danger?: boolean;
   disabled?: boolean;
 }
+
+/** Menu opener source: pointer events and F2's synthetic coordinates. */
+export type CtxEvent = Pick<MouseEvent, "preventDefault" | "stopPropagation"> & {
+  clientX: number;
+  clientY: number;
+};
 
 interface Props {
   x: number;

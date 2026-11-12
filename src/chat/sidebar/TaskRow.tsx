@@ -11,8 +11,8 @@ import {
   type HTMLAttributes,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { Archive, Check, LoaderCircle, Pin } from "lucide-react";
-import type { CtxItem } from "../ChatContextMenu";
+import { Archive, Check, Ellipsis, LoaderCircle, Pin } from "lucide-react";
+import type { CtxEvent, CtxItem } from "../ChatContextMenu";
 import { relTime, useI18n } from "../i18n";
 import type { Session } from "../types";
 
@@ -24,7 +24,7 @@ export interface TaskRowOps {
   onMarkUnread: (id: string) => void;
   onRename: (id: string) => void;
   onDelete: (id: string) => void;
-  onCtx: (e: ReactMouseEvent, items: CtxItem[]) => void;
+  onCtx: (e: CtxEvent, items: CtxItem[]) => void;
 }
 
 /** dnd-kit binding bag applied to the row root; absent → plain row. */
@@ -39,6 +39,24 @@ export interface SortableBindings {
 
 export function hasPendingPermission(s: Session): boolean {
   return s.messages.some((m) => m.blocks.some((b) => b.kind === "permission" && !b.decision));
+}
+
+/** Space-separated block-kind tokens for `data-blocks` — agents select with
+ *  the native `[data-blocks~=x]`: base kinds plus diff / tool-error /
+ *  permission-pending refinements. */
+export function blockTokens(s: Session): string {
+  const kinds = new Set<string>();
+  for (const m of s.messages) {
+    for (const b of m.blocks) {
+      kinds.add(b.kind);
+      if (b.kind === "tool") {
+        if (b.status === "error") kinds.add("tool-error");
+        if (b.detail.tool === "edit" || b.detail.tool === "write") kinds.add("diff");
+      }
+      if (b.kind === "permission" && !b.decision) kinds.add("permission-pending");
+    }
+  }
+  return [...kinds].join(" ");
 }
 
 export function TaskRow({
@@ -109,6 +127,7 @@ export function TaskRow({
       className={`t-row${active ? " active" : ""}${confirming ? " confirming" : ""}`}
       data-testid={testid}
       data-id={session.id}
+      data-blocks={blockTokens(session)}
       data-project={session.projectId}
       data-group={session.groupId}
       data-pinned={session.pinned}
@@ -124,6 +143,18 @@ export function TaskRow({
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           ops.onSelect(session.id, session.unreadAtMs);
+        }
+        if (e.key === "F2") {
+          const r = e.currentTarget.getBoundingClientRect();
+          ops.onCtx(
+            {
+              preventDefault: () => {},
+              stopPropagation: () => {},
+              clientX: r.right - 120,
+              clientY: r.bottom + 2,
+            },
+            menu,
+          );
         }
       }}
       onContextMenu={(e) => ops.onCtx(e, menu)}
@@ -167,6 +198,19 @@ export function TaskRow({
       <span className="t-tail">
         <span className="t-meta">{relTime(session.updatedAtMs, lang)}</span>
         <span className="t-actions">
+          <button
+            type="button"
+            className="sb-icon-mini"
+            data-testid="task-more"
+            title={t("moreActions")}
+            aria-label={t("moreActions")}
+            onClick={(e) => {
+              e.stopPropagation();
+              ops.onCtx(e, menu);
+            }}
+          >
+            <Ellipsis size={13} />
+          </button>
           <button
             type="button"
             className="t-act"

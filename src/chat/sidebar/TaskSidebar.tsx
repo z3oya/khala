@@ -1,8 +1,8 @@
 /* Task sidebar v4 (ZCodium project/task list): nav rows, view switcher,
  * three views, footer. Collapses stay mounted behind grid-rows + inert. */
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppWindow, Bot, Check, ListFilter, Plus, Puzzle, Search, Workflow } from "lucide-react";
-import type { CtxItem } from "../ChatContextMenu";
+import type { CtxEvent, CtxItem } from "../ChatContextMenu";
 import { useI18n, type MsgKey } from "../i18n";
 import type { Draft, Project, Session, TaskGroup } from "../types";
 import { ChatContextMenu } from "../ChatContextMenu";
@@ -115,7 +115,7 @@ export function TaskSidebar(props: Props) {
     };
   }, [filterOpen]);
 
-  const openCtx = useCallback((e: ReactMouseEvent, items: CtxItem[]) => {
+  const openCtx = useCallback((e: CtxEvent, items: CtxItem[]) => {
     e.preventDefault();
     e.stopPropagation();
     setCtx({ x: e.clientX, y: e.clientY, items });

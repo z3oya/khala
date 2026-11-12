@@ -7,6 +7,7 @@ import { Archive, Cpu, Info, Keyboard, Palette, Shield, SlidersHorizontal } from
 import { api, type InfoOut } from "../api/commands";
 import { transport } from "../lib/rpc";
 import { relTime, useI18n, type MsgKey, type StringKey } from "./i18n";
+import type { ThemeSetting } from "./useTheme";
 import type { Session } from "./types";
 
 interface Section {
@@ -46,7 +47,6 @@ const SECTIONS: Section[] = [
     descKey: "stAppearanceDesc",
     icon: Palette,
     rows: [
-      ["rowTheme", { key: "valLight" }],
       ["rowSidebarWidth", { key: "valInherit" }],
       ["rowMotion", { key: "valOn" }],
     ],
@@ -91,6 +91,15 @@ const SECTIONS: Section[] = [
 const LANG_OPTIONS: { id: "zh" | "en"; label: string }[] = [
   { id: "zh", label: "简体中文" },
   { id: "en", label: "English" },
+];
+
+/** Deep-link whitelist for ChatApp's ?settings=<section>. */
+export const SETTINGS_SECTION_IDS: string[] = SECTIONS.map((s) => s.id);
+
+const THEME_OPTIONS: { id: ThemeSetting; labelKey: "valLight" | "valDark" | "valSystem" }[] = [
+  { id: "light", labelKey: "valLight" },
+  { id: "dark", labelKey: "valDark" },
+  { id: "system", labelKey: "valSystem" },
 ];
 
 const MOCK_RECORD_COUNT = 3;
@@ -266,12 +275,14 @@ export function SettingsPanel({
   activeId,
   archived,
   closing,
+  theme,
   onRestoreArchive,
   onDeleteArchive,
 }: {
   activeId: string;
   archived: Session[];
   closing: boolean;
+  theme: { setting: ThemeSetting; setSetting: (s: ThemeSetting) => void };
   onRestoreArchive: (id: string) => void;
   onDeleteArchive: (id: string) => void;
 }) {
@@ -304,6 +315,27 @@ export function SettingsPanel({
                     onClick={() => setLang(opt.id)}
                   >
                     {opt.label}
+                  </button>
+                ))}
+              </span>
+            </div>
+          )}
+          {active.id === "appearance" && (
+            <div className="st-row" data-testid="chat-settings-theme-row">
+              <span className="st-row-label">{t("rowTheme")}</span>
+              <span className="lang-options">
+                {THEME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`lang-option${theme.setting === opt.id ? " active" : ""}`}
+                    data-testid="chat-settings-theme-option"
+                    data-opt={opt.id}
+                    data-active={theme.setting === opt.id}
+                    aria-pressed={theme.setting === opt.id}
+                    onClick={() => theme.setSetting(opt.id)}
+                  >
+                    {t(opt.labelKey)}
                   </button>
                 ))}
               </span>

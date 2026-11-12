@@ -6,8 +6,9 @@ import { I18nProvider, useI18n } from "./i18n";
 import { TaskSidebar } from "./sidebar/TaskSidebar";
 import { useTaskSidebarPrefs } from "./sidebar/useTaskSidebarPrefs";
 import { MIN_SIDEBAR_WIDTH } from "./useSidebarResize";
+import { useTheme } from "./useTheme";
 import { TopBar } from "./TopBar";
-import { SettingsSidebar, SettingsPanel } from "./SettingsView";
+import { SETTINGS_SECTION_IDS, SettingsSidebar, SettingsPanel } from "./SettingsView";
 import { AppsView } from "./apps/AppsView";
 import { LogoToggle } from "./LogoToggle";
 import { MessageList } from "./MessageList";
@@ -17,6 +18,15 @@ import { PlaceholderView } from "./PlaceholderView";
 import type { PlaceholderPage, View } from "./types";
 import "./tokens.css";
 import "./chat.css";
+
+/* URL params, read once at module load like useMockChat's ?mock=
+ * (?shot=1 static mode, ?settings=<section> deep link). */
+const PARAMS = new URLSearchParams(window.location.search);
+const SHOT = PARAMS.get("shot") === "1";
+const SETTINGS_DEEPLINK = PARAMS.get("settings");
+const INITIAL_VIEW: View = SETTINGS_DEEPLINK ? "settings" : "chat";
+const INITIAL_SECTION =
+  SETTINGS_DEEPLINK && SETTINGS_SECTION_IDS.includes(SETTINGS_DEEPLINK) ? SETTINGS_DEEPLINK : "general";
 
 const DEFAULT_SIDEBAR_WIDTH = 396;
 /* Holds must outlast the st-*-out / st-return-in durations in chat.css. */
@@ -67,8 +77,9 @@ function ChatShell() {
     toggleProjectPin,
   } = useMockChat();
   const { prefs, update, setView: setSidebarView, setExpanded, toggleGroupCollapsed } = useTaskSidebarPrefs();
-  const [view, setView] = useState<View>("chat");
-  const [settingsSection, setSettingsSection] = useState("general");
+  const theme = useTheme();
+  const [view, setView] = useState<View>(INITIAL_VIEW);
+  const [settingsSection, setSettingsSection] = useState(INITIAL_SECTION);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [sidebarDragging, setSidebarDragging] = useState(false);
@@ -118,7 +129,7 @@ function ChatShell() {
   const closeSettings = () => {
     if (settingsClosing) return;
     setGearSpin("off");
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (SHOT || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setView("chat");
       return;
     }
@@ -204,6 +215,8 @@ function ChatShell() {
     <div
       className={`chat-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
       data-testid="chat-root"
+      data-theme={theme.resolved}
+      data-shot={SHOT || undefined}
       data-view={view}
       data-settings-closing={settingsClosing || undefined}
       data-just-closed={settingsJustClosed || undefined}
@@ -256,6 +269,7 @@ function ChatShell() {
             <SettingsPanel
               activeId={settingsSection}
               closing={settingsClosing}
+              theme={theme}
               archived={archivedSessions}
               onRestoreArchive={(id) => setArchived(id, false)}
               onDeleteArchive={deleteSession}

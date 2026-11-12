@@ -1,9 +1,13 @@
 /*
- * khala chat — design tokens (light theme).
- * Scoped to the .chat-app subtree; nothing here leaks to the greet demo.
- * Dark theme slot: duplicate this block under `.chat-app[data-theme="dark"]`.
+ * khala chat — design tokens (light + dark). Everything is scoped to .chat-app
+ * except the pre-mount html background at the bottom.
+ * Dark theme: <html data-theme="dark"> (inline FOUC guard in index.html +
+ * useTheme at runtime) selects the dark block below. Only color tokens are
+ * overridden; geometry and type tokens are shared across themes.
  */
 .chat-app {
+  color-scheme: light;
+
   /* Palette: warm-white -> progressive grays -> deep gray (no pure #fff/#000). */
   --bg: #fbfbfc; /* main canvas / message area */
   --surface: #f6f6f7; /* window shell around the card, sidebar, code blocks, tool-card bodies */
@@ -22,15 +26,17 @@
   /* Depth: monochrome resting shadows for cards and floating layers. */
   --shadow-1: 0 1px 2px rgba(23, 23, 28, 0.05);
   --shadow-2: 0 4px 14px rgba(23, 23, 28, 0.08);
+  --scrim: rgba(23, 23, 28, 0.28); /* modal overlay */
+  --sel-bg: color-mix(in srgb, var(--ink) 16%, transparent); /* text selection */
 
   /* Muted functional colors — small areas only: diff rows, status dots,
      error text. They never cover large surfaces. */
   --ok: #4c9a6a;
   --err: #c25555;
   --warn: #c29a45;
-  --diff-add-bg: rgba(76, 154, 106, 0.12);
-  --diff-del-bg: rgba(194, 85, 85, 0.1);
-  --ring: rgba(23, 23, 28, 0.06); /* pending-permission halo, from --ink */
+  --diff-add-bg: color-mix(in srgb, var(--ok) 12%, transparent);
+  --diff-del-bg: color-mix(in srgb, var(--err) 10%, transparent);
+  --ring: color-mix(in srgb, var(--ink) 6%, transparent); /* pending-permission halo */
 
   /* Radius — three steps only; dots and avatars are the sole full circles. */
   --r-sm: 5px; /* chips, badges */
@@ -43,13 +49,22 @@
   --selected: var(--surface-3); /* 10% ink equivalent */
   --dot-unread: #0ea5e9;
   --drop: #0a84c1; /* sidebar drag-drop indicator line/dot */
-  --tag: rgba(23, 23, 28, 0.06); /* count badges, kbd chips */
+  --tag: color-mix(in srgb, var(--ink) 6%, transparent); /* count badges, kbd chips */
 
   /* Mention chips are pure text color, no fills. */
   --mention-file-fg: #0284c7;
   --mention-skill-fg: #7c3aed;
   --mention-command-fg: #d97706;
   --mention-session-fg: #0d9488;
+
+  /* Task-group accents (GroupedView dots and group edges). */
+  --grp-gray: #9b9ba1;
+  --grp-red: #d76a77;
+  --grp-orange: #d98e4a;
+  --grp-yellow: #c2a94e;
+  --grp-green: var(--ok);
+  --grp-blue: #5595c9;
+  --grp-purple: #8f7fc7;
 
   /* Type */
   --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
@@ -59,4 +74,55 @@
   --fs-xs: 12px;
   --fs-mono: 13px;
   --fs-mono-sm: 12.5px;
+}
+
+/*
+ * Dark theme: the same monochrome ramp mirrored — canvas goes deepest,
+ * ink inverts to near-white (user bubble / primary buttons keep their
+ * highest-emphasis role), functional hues lift one step for contrast.
+ */
+:root[data-theme="dark"] .chat-app {
+  color-scheme: dark;
+
+  --bg: #131316; /* main canvas / message area */
+  --surface: #191a1e; /* window shell around the card, sidebar, code blocks, tool-card bodies */
+  --surface-2: #212227; /* hover fills, secondary surfaces */
+  --surface-3: #2a2b31; /* active selection fills (sidebar active item) */
+  --border: #2b2c32; /* hairline */
+  --border-strong: #3f4046; /* composer frame, emphasized edges */
+  --text-3: #75757d; /* placeholders, tertiary */
+  --text-2: #a6a6ae; /* secondary text */
+  --text-1: #e4e4e8; /* body text */
+  --ink: #ececf1; /* headings, active items, user bubble, primary buttons */
+  --ink-hover: #dfdfe6; /* hover state for ink surfaces */
+  --ink-fg: #1a1a1f; /* text/icons on ink surfaces */
+
+  /* Shadows only read as depth when much stronger on dark. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --scrim: rgba(0, 0, 0, 0.55); /* modal overlay */
+  --sel-bg: color-mix(in srgb, var(--ink) 24%, transparent); /* text selection */
+
+  --ok: #66b088;
+  --err: #e07a7a;
+  --warn: #d4b06a;
+  /* Tints need more alpha on dark to stay visible. */
+  --diff-add-bg: color-mix(in srgb, var(--ok) 18%, transparent);
+  --diff-del-bg: color-mix(in srgb, var(--err) 16%, transparent);
+  --ring: color-mix(in srgb, var(--ink) 10%, transparent); /* pending-permission halo */
+
+  --dot-unread: #38bdf8;
+  --drop: #3bafdc; /* sidebar drag-drop indicator line/dot */
+
+  /* Mention chips lift to the 400-step of their hues. */
+  --mention-file-fg: #38bdf8;
+  --mention-skill-fg: #a78bfa;
+  --mention-command-fg: #fbbf24;
+  --mention-session-fg: #2dd4bf;
+}
+
+/* Pre-mount canvas: must sit on html itself — App.css's :root background
+   would otherwise win over any body background until React mounts. */
+html[data-theme="dark"] {
+  background: #131316;
 }

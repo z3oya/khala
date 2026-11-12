@@ -17,7 +17,6 @@
   color: var(--text-1);
   font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: var(--fs-ui);
-  color-scheme: light;
 
   /* Shell geometry, shared by card / topbar / overlay / collapsed topbar. */
   --card-inset: 4px;
@@ -25,6 +24,11 @@
   --topbar-h: 48px;
   --overlay-left: 12px; /* sidebar's 12px content gutter */
   --overlay-clear: 44px; /* overlay-left + 30px logo + 2px */
+}
+
+/* color-scheme would hand selection to the UA blue; keep it on-brand. */
+.chat-app ::selection {
+  background: var(--sel-bg);
 }
 
 .main-card {
@@ -204,7 +208,7 @@
 }
 .sb-nav-new {
   width: 100%;
-  height: 32px;
+  height: 37px;
   justify-content: flex-start;
   gap: 8px;
   padding: 0 8px;
@@ -232,7 +236,7 @@
 }
 .sb-nav-row {
   width: 100%;
-  height: 32px;
+  height: 37px;
   justify-content: flex-start;
   gap: 8px;
   padding: 0 8px;
@@ -816,7 +820,7 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 18vh;
-  background: rgba(23, 23, 28, 0.28);
+  background: var(--scrim);
 }
 .modal {
   width: 340px;
@@ -2315,7 +2319,7 @@
 .sa-mark {
   padding: 0 1px;
   border-radius: 2px;
-  background: rgba(76, 154, 106, 0.18);
+  background: color-mix(in srgb, var(--ok) 18%, transparent);
   color: inherit;
 }
 .sa-err {
@@ -2595,4 +2599,13 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ?shot=1: reduced-motion kill switch, opt-in via .chat-app[data-shot]. */
+.chat-app[data-shot] *,
+.chat-app[data-shot] *::before,
+.chat-app[data-shot] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

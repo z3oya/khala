@@ -615,3 +615,141 @@ export const initialSessions: Session[] = [
     ],
   },
 ];
+
+/*
+ * ?mock=showcase seed (streaming/queue seeds live in useMockChat). Last
+ * block must stay text — the caret only renders on a trailing text block
+ * (MessageList). No projectId → unfiled zone.
+ */
+export const SHOWCASE_SESSION: Session = {
+  id: "s-showcase",
+  title: "全块型样例",
+  pinned: false,
+  archived: false,
+  status: "streaming",
+  updatedAtMs: now,
+  messages: [
+    user("m-show-u", now - 30_000, "把每种消息块各来一份,做成一条可断言的样例线程。"),
+    {
+      id: "m-show-r",
+      role: "assistant",
+      streaming: true,
+      atMs: now - 29_000,
+      blocks: [
+        {
+          kind: "text",
+          id: "m-show-b1",
+          markdown:
+            "好的,这条线程按块型清单逐一来。行内码如 `useMockChat` 走 `md-code-inline`,下面是围栏块:",
+        },
+        {
+          kind: "thinking",
+          id: "m-show-b2",
+          startedAtMs: now - 29_000,
+          durationMs: 4_200,
+          text: "样例线程要一次覆盖:文本/行内码/围栏码、thinking、工具卡三种状态、含 hunk 的 diff、权限卡待决与已决。块序保持可读,收尾必须是 text 块,caret 才会渲染。",
+        },
+        {
+          kind: "text",
+          id: "m-show-b3",
+          markdown:
+            "围栏代码块(带语言标签与复制按钮):\n\n```ts\nexport function useTheme() {\n  const [setting, setSettingState] = useState<ThemeSetting>(readSetting);\n  return { setting, resolved, setSetting };\n}\n```",
+        },
+        {
+          kind: "tool",
+          id: "m-show-b4",
+          name: "Bash",
+          status: "running",
+          summary: 'rg -n "data-blocks" src',
+          detail: {
+            tool: "bash",
+            command: 'rg -n "data-blocks" src',
+            outputLines: ["src/chat/sidebar/TaskRow.tsx:118:  data-blocks={blockTokens(session)}"],
+          },
+        },
+        {
+          kind: "tool",
+          id: "m-show-b5",
+          name: "Bash",
+          status: "done",
+          summary: "pnpm build",
+          detail: {
+            tool: "bash",
+            command: "pnpm build",
+            outputLines: [
+              "$ tsc && vite build",
+              "✓ 2146 modules transformed.",
+              "dist/assets/index-CbKSJckn.js  577.66 kB │ gzip: 183.35 kB",
+              "✓ built in 490ms",
+            ],
+            hiddenLines: 12,
+          },
+        },
+        {
+          kind: "tool",
+          id: "m-show-b6",
+          name: "Bash",
+          status: "error",
+          summary: "cargo clippy --workspace",
+          detail: {
+            tool: "bash",
+            command: "cargo clippy --workspace",
+            outputLines: [
+              "error: unused variable: `ctx`",
+              "  --> crates/khala-core/src/greet.rs:42:9",
+              "error: aborting due to 1 previous error",
+            ],
+            exitCode: 101,
+          },
+        },
+        {
+          kind: "tool",
+          id: "m-show-b7",
+          name: "Edit",
+          status: "done",
+          summary: "src/chat/sidebar/TaskRow.tsx",
+          detail: {
+            tool: "edit",
+            path: "src/chat/sidebar/TaskRow.tsx",
+            hunks: [
+              {
+                header: "@@ -110,6 +110,7 @@",
+                lines: [
+                  { kind: "equal", oldLine: 110, newLine: 110, text: "      data-testid={testid}" },
+                  { kind: "equal", oldLine: 111, newLine: 111, text: "      data-id={session.id}" },
+                  { kind: "add", newLine: 112, text: "      data-blocks={blockTokens(session)}" },
+                  { kind: "equal", oldLine: 112, newLine: 113, text: "      data-status={session.status}" },
+                  { kind: "del", oldLine: 113, text: "      data-unread={session.unreadAtMs !== undefined || undefined}" },
+                  { kind: "add", newLine: 114, text: "      data-unread={session.unreadAtMs !== undefined || undefined}" },
+                  { kind: "equal", oldLine: 114, newLine: 115, text: "      data-waiting={waiting || undefined}" },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          kind: "permission",
+          id: "m-show-b8",
+          toolName: "Bash",
+          summary: "cargo test --workspace",
+          command: "cargo test --workspace",
+          /* resolvable; no script waits on it */
+        },
+        {
+          kind: "permission",
+          id: "m-show-b9",
+          toolName: "Bash",
+          summary: "pnpm build",
+          command: "pnpm build",
+          decision: "allowOnce",
+        },
+        {
+          kind: "text",
+          id: "m-show-b10",
+          markdown:
+            "块型清单到此覆盖完毕:文本×3(含围栏码)、thinking、工具卡 running/done/error、含 hunk 的 Edit diff、权限卡待决与已决。队列里还压了一条 paused 消息,点恢复即转入真实脚本回复。",
+        },
+      ],
+    },
+  ],
+};

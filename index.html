@@ -5,6 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>khala</title>
+    <script>
+      /* FOUC guard: resolve khala-theme before first paint; useTheme keeps
+         <html data-theme> updated afterwards (same attribute, one source). */
+      (function () {
+        var s = "system";
+        try {
+          s = localStorage.getItem("khala-theme") || "system";
+        } catch {}
+        var dark =
+          s === "dark" || (s !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        var t = dark ? "dark" : "light";
+        document.documentElement.dataset.theme = t;
+        document.documentElement.style.colorScheme = t;
+      })();
+    </script>
   </head>
 
   <body>
