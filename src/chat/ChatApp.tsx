@@ -9,6 +9,7 @@ import { MIN_SIDEBAR_WIDTH } from "./useSidebarResize";
 import { useTheme } from "./useTheme";
 import { TopBar } from "./TopBar";
 import { SETTINGS_SECTION_IDS, SettingsSidebar, SettingsPanel } from "./SettingsView";
+import { SettingsGearMenu } from "./SettingsGearMenu";
 import { AppsView } from "./apps/AppsView";
 import { LogoToggle } from "./LogoToggle";
 import { MessageList } from "./MessageList";
@@ -120,6 +121,7 @@ function ChatShell() {
   const [settingsClosing, setSettingsClosing] = useState(false);
   /* null = no spin on first render */
   const [gearSpin, setGearSpin] = useState<"on" | "off" | null>(null);
+  const [gearCtx, setGearCtx] = useState<{ x: number; y: number; seq: number } | null>(null);
   const openSettings = () => {
     setSettingsClosing(false);
     setSettingsJustClosed(false);
@@ -246,9 +248,27 @@ function ChatShell() {
         title={view === "settings" ? t("backToWorkspace") : t("openSettings")}
         aria-label={view === "settings" ? t("backToWorkspace") : t("openSettings")}
         onClick={() => (view === "settings" ? closeSettings() : openSettings())}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          /* Menu anchors to the button rect, independent of the pointer. */
+          const r = e.currentTarget.getBoundingClientRect();
+          setGearCtx((prev) => ({ x: r.left, y: r.top, seq: (prev?.seq ?? 0) + 1 }));
+        }}
       >
         <Settings size={16} />
       </button>
+
+      {/* Keyed by open seq: a second right-click while open remounts, flyout state resets. */}
+      {gearCtx && (
+        <SettingsGearMenu
+          key={gearCtx.seq}
+          x={gearCtx.x}
+          y={gearCtx.y}
+          theme={theme}
+          onClose={() => setGearCtx(null)}
+        />
+      )}
 
       {view === "settings" ? (
         <SettingsSidebar

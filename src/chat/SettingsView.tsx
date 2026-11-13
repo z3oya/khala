@@ -96,7 +96,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
-const LANG_OPTIONS: { id: "zh" | "en"; label: string }[] = [
+export const LANG_OPTIONS: { id: "zh" | "en"; label: string }[] = [
   { id: "zh", label: "简体中文" },
   { id: "en", label: "English" },
 ];
@@ -104,7 +104,7 @@ const LANG_OPTIONS: { id: "zh" | "en"; label: string }[] = [
 /** Deep-link whitelist for ChatApp's ?settings=<section>. */
 export const SETTINGS_SECTION_IDS: string[] = SECTIONS.map((s) => s.id);
 
-const THEME_OPTIONS: { id: ThemeSetting; labelKey: "valLight" | "valDark" | "valSystem" }[] = [
+export const THEME_OPTIONS: { id: ThemeSetting; labelKey: "valLight" | "valDark" | "valSystem" }[] = [
   { id: "light", labelKey: "valLight" },
   { id: "dark", labelKey: "valDark" },
   { id: "system", labelKey: "valSystem" },

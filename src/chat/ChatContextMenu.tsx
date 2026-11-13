@@ -6,6 +6,9 @@ export interface CtxItem {
   action?: () => void;
   danger?: boolean;
   disabled?: boolean;
+  submenu?: CtxItem[];
+  /* Radio marker: rendered only when defined. */
+  checked?: boolean;
 }
 
 /** Menu opener source: pointer events and F2's synthetic coordinates. */
@@ -19,20 +22,24 @@ interface Props {
   y: number;
   items: CtxItem[];
   onClose: () => void;
+  /* Bottom-anchor mode: the menu opens above y. */
+  openUp?: boolean;
 }
 
-export function ChatContextMenu({ x, y, items, onClose }: Props) {
+export function ChatContextMenu({ x, y, items, onClose, openUp }: Props) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ x, y });
+  const [openSub, setOpenSub] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     const el = menuRef.current;
     if (!el) return;
+    const ty = openUp ? y - el.offsetHeight - 4 : y;
     setPos({
       x: Math.max(4, Math.min(x, window.innerWidth - el.offsetWidth - 8)),
-      y: Math.max(4, Math.min(y, window.innerHeight - el.offsetHeight - 8)),
+      y: Math.max(4, Math.min(ty, window.innerHeight - el.offsetHeight - 8)),
     });
-  }, [x, y, items]);
+  }, [x, y, items, openUp]);
 
   useEffect(() => {
     const close = () => onClose();
@@ -61,6 +68,63 @@ export function ChatContextMenu({ x, y, items, onClose }: Props) {
       onMouseDown={(e) => e.stopPropagation()}
     >
       {items.map((item) => (
+        <div key={item.key} className="ctx-branch" onMouseEnter={() => setOpenSub(item.submenu ? item.key : null)}>
+          <button
+            type="button"
+            role="menuitem"
+            className={`ctx-item${item.danger ? " danger" : ""}${item.disabled ? " disabled" : ""}`}
+            data-testid="chat-context-item"
+            data-action={item.key}
+            data-checked={item.checked}
+            disabled={item.disabled}
+            aria-haspopup={item.submenu ? "menu" : undefined}
+            aria-expanded={item.submenu ? openSub === item.key : undefined}
+            onClick={() => {
+              if (item.submenu) {
+                setOpenSub(item.key);
+                return;
+              }
+              onClose();
+              item.action?.();
+            }}
+          >
+            {item.checked !== undefined && <span className="ctx-check">{item.checked ? "●" : "○"}</span>}
+            {item.label}
+            {item.submenu && <span className="ctx-more">{">"}</span>}
+          </button>
+          {item.submenu && openSub === item.key && <CtxFlyout items={item.submenu} onClose={onClose} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Flyout beside its parent branch; plain items only. */
+function CtxFlyout({ items, onClose }: { items: CtxItem[]; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const branch = el?.parentElement;
+    if (!el || !branch) return;
+    const r = branch.getBoundingClientRect();
+    /* -1px overlap: no gap for the pointer to fall through between panels. */
+    setPos({
+      x: Math.max(4, Math.min(r.right - 1, window.innerWidth - el.offsetWidth - 8)),
+      y: Math.max(4, Math.min(r.top - 5, window.innerHeight - el.offsetHeight - 8)),
+    });
+  }, [items]);
+
+  return (
+    <div
+      ref={ref}
+      className="ctx-menu ctx-sub"
+      style={pos ? { left: pos.x, top: pos.y } : undefined}
+      data-testid="chat-context-submenu"
+      role="menu"
+    >
+      {items.map((item) => (
         <button
           key={item.key}
           type="button"
@@ -68,12 +132,14 @@ export function ChatContextMenu({ x, y, items, onClose }: Props) {
           className={`ctx-item${item.danger ? " danger" : ""}${item.disabled ? " disabled" : ""}`}
           data-testid="chat-context-item"
           data-action={item.key}
+          data-checked={item.checked}
           disabled={item.disabled}
           onClick={() => {
             onClose();
             item.action?.();
           }}
         >
+          {item.checked !== undefined && <span className="ctx-check">{item.checked ? "●" : "○"}</span>}
           {item.label}
         </button>
       ))}

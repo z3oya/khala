@@ -1852,6 +1852,21 @@
   color: var(--text-3);
   cursor: default;
 }
+/* ●/○ radio marker in option items. */
+.ctx-item .ctx-check {
+  display: inline-block;
+  width: 1.1em;
+  color: var(--text-3);
+}
+.ctx-item[data-checked="true"] .ctx-check {
+  color: var(--text-1);
+}
+/* Submenu chevron. */
+.ctx-item .ctx-more {
+  margin-left: auto;
+  padding-left: 12px;
+  color: var(--text-3);
+}
 
 /* ---------- settings ---------- */
 
