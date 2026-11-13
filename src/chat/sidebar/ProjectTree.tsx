@@ -130,7 +130,9 @@ function SortableTasks({
   const activeIdx = drag ? ordered.findIndex((s) => s.id === drag.activeId) : -1;
   const overIdx = drag?.overId ? ordered.findIndex((s) => s.id === drag.overId) : -1;
   const dropPos =
-    activeIdx >= 0 && overIdx >= 0 ? dropPosOf(activeIdx, overIdx) : undefined;
+    activeIdx >= 0 && overIdx >= 0 && activeIdx !== overIdx
+      ? dropPosOf(activeIdx, overIdx)
+      : undefined;
   const activeSession = drag ? ordered.find((s) => s.id === drag.activeId) : undefined;
 
   const commit = (activeId: string, overId: string) => {
@@ -182,7 +184,7 @@ function SortableTasks({
             <SortableTaskRow key={s.id} session={s} scope={scope} ops={ops} testid={testid} />
           ))}
           {/* Test observable only; the visual indicator lives on the row. */}
-          {drag?.overId && (
+          {drag && dropPos && (
             <div
               data-testid="task-drop-indicator"
               data-over-id={drag.overId}

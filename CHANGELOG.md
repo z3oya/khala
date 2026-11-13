@@ -23,6 +23,7 @@ Guidelines:
 - `?shot=1`: disables animations and transitions for deterministic screenshots.
 - `?settings=<section>`: deep-links straight to a settings section.
 - Task rows: `data-blocks` kind tokens, ⋯ menu button, F2 opens the context menu.
+- Sidebar: drag to reorder sessions within a project or the unfiled zone; a semi-transparent clone follows the pointer with an insertion line, and the order persists.
 
 ### Changed
 

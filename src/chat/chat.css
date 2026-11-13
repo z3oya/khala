@@ -641,6 +641,15 @@
   box-shadow: var(--shadow-2);
   cursor: grabbing;
 }
+/* Ghost floats semi-transparent; the scoped rule below dims only the in-place
+   original — the ghost sits outside [data-drag-active] as a DOM sibling. */
+[data-drag-ghost] {
+  opacity: 0.75;
+}
+[data-drag-active] .t-row[data-dragging="true"] {
+  opacity: 0.4;
+  box-shadow: none;
+}
 /* Hover actions/timestamps swap stays off while a drag is live. */
 [data-drag-active] .t-row:hover .t-actions,
 [data-drag-active] .t-row:focus-within .t-actions {

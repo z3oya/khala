@@ -7,7 +7,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type HTMLAttributes,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -30,7 +29,6 @@ export interface TaskRowOps {
 /** dnd-kit binding bag applied to the row root; absent → plain row. */
 export interface SortableBindings {
   ref?: (node: HTMLDivElement | null) => void;
-  style?: CSSProperties;
   attributes?: HTMLAttributes<HTMLDivElement>;
   listeners?: HTMLAttributes<HTMLDivElement>;
   dragging?: boolean;
@@ -119,7 +117,6 @@ export function TaskRow({
   return (
     <div
       ref={sortable?.ref}
-      style={sortable?.style}
       {...(sortable?.attributes ?? {})}
       {...(sortable?.listeners ?? {})}
       role="button"
