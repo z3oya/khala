@@ -30,17 +30,22 @@ function systemTheme(): ResolvedTheme {
   return window.matchMedia(DARK_QUERY).matches ? "dark" : "light";
 }
 
-/** Applies the resolved theme to <html>; in Tauri also to the native window. */
-async function applyTheme(theme: ResolvedTheme) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
-  if (!("__TAURI_INTERNALS__" in window)) return;
+function isTauri(): boolean {
+  return "__TAURI_INTERNALS__" in window;
+}
+
+/* "system" must unpin the native window (setTheme(null)): while a theme is
+ * pinned, tao drops the OS theme-change broadcast, so neither the title bar
+ * nor the tauri://theme-changed event follows the OS. */
+async function applyTheme(setting: ThemeSetting, resolved: ResolvedTheme) {
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.style.colorScheme = resolved;
+  if (!isTauri()) return;
   try {
-    // requires the window:allow-set-theme capability
     const { getCurrentWindow } = await import("@tauri-apps/api/window");
-    await getCurrentWindow().setTheme(theme);
+    await getCurrentWindow().setTheme(setting === "system" ? null : resolved);
   } catch {
-    // setTheme may reject (older runtime); the CSS theme still applies
+    // non-fatal: the CSS theme still applies
   }
 }
 
@@ -69,9 +74,33 @@ export function useTheme() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  /* Tauri: the OS theme event is authoritative; WebView2's media query can
+   * lag the actual switch. */
   useEffect(() => {
-    void applyTheme(resolved);
-  }, [resolved]);
+    if (!isTauri()) return;
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    void (async () => {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        const off = await getCurrentWindow().onThemeChanged(({ payload }) => {
+          if (payload === "dark" || payload === "light") setSystem(payload);
+        });
+        if (disposed) off();
+        else unlisten = off;
+      } catch {
+        // event unavailable: matchMedia still covers it
+      }
+    })();
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    void applyTheme(setting, resolved);
+  }, [setting, resolved]);
 
   const setSetting = useCallback((next: ThemeSetting) => {
     setSettingState(next);

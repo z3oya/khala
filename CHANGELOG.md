@@ -18,7 +18,7 @@ Guidelines:
 
 ### Added
 
-- Dark mode with a three-state selector in Settings → Appearance (light / dark / follow system); applies across app windows.
+-Appearance (light / dark / follow system);
 - `?mock=showcase`: sample session covering every message-block type.
 - `?shot=1`: disables animations and transitions for deterministic screenshots.
 - `?settings=<section>`: deep-links straight to a settings section.
