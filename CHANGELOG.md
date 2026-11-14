@@ -35,6 +35,7 @@ Guidelines:
 - `?mock=` accepts comma-combined values.
 
 - Sidebar session rows: the relative time and the archive button now share one right-edge slot, swapping in place on hover/focus (touch shows only the button).
+- Sidebar session list: the scrollbar thumb shows only while the pointer is over the list.
 
 ### Removed
 

@@ -2575,7 +2575,6 @@
 
 /* ---------- utilities ---------- */
 
-.sb-scroll,
 .chat-scroll,
 .tool-output,
 .st-nav,
@@ -2585,6 +2584,16 @@
 .apps-win-body,
 .sa-pre {
   scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Hover-revealed thumb; thin width keeps the gutter reserved. */
+.sb-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 160ms ease;
+}
+.sb-scroll:hover {
   scrollbar-color: var(--border-strong) transparent;
 }
 
