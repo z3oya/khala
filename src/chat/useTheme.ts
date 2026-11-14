@@ -115,3 +115,25 @@ export function useTheme() {
 
   return { setting, resolved, setSetting };
 }
+
+/* Resolved-theme hook for leaf consumers (ExtensionBlock, sample apps).
+ * Reads <html data-theme> at mount, then follows attribute mutations — the
+ * app's single theme source, shared with standalone app windows. */
+export function useResolvedTheme(): ResolvedTheme {
+  const [theme, setTheme] = useState<ResolvedTheme>(() =>
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light",
+  );
+
+  useEffect(() => {
+    const read = () =>
+      setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return theme;
+}

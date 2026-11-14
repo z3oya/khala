@@ -141,6 +141,16 @@ export async function mockScript(ctx: ScriptCtx): Promise<void> {
     }
     ctx.patchBlock(testId, (b) => (b.kind === "tool" ? { ...b, status: "done" } : b));
     await ctx.typeInto(text3Id, "测试通过:6 passed。这轮改动收尾了。");
+    if (!live()) return;
+
+    /* Streams a mermaid fence: unclosed renders as code, the closing fence
+     * flips it to a diagram. */
+    const text4Id = ctx.uid("b");
+    append({ kind: "text", id: text4Id, markdown: "" });
+    await ctx.typeInto(
+      text4Id,
+      "mermaid 画出一张这轮链路:\n\n```mermaid\nflowchart LR\n  C[Composer] --> E[engine]\n  E --> T[工具卡]\n  T --> S[总结文本]\n```",
+    );
   }
 
   if (!live()) return;

@@ -1177,6 +1177,36 @@
   color: var(--text-1);
 }
 
+/* Extension-hosted renders: the md-code frame and head are reused; these
+ * cover the rendered pane and its states. */
+.md-diagram-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.md-diagram-body {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  overflow-x: auto;
+}
+.md-diagram-body svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+.md-diagram-note {
+  padding: 10px 4px;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.md-diagram-err {
+  margin: 0;
+  padding: 8px 14px 0;
+  font-size: var(--fs-xs);
+  color: var(--err);
+}
+
 .stream-caret {
   display: inline-block;
   width: 7px;
@@ -2353,6 +2383,24 @@
   white-space: pre-wrap;
   word-break: break-word;
   overflow-y: auto;
+}
+/* Playground rendered-diagram pane. */
+.sa-diagram {
+  flex: 1;
+  min-height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: auto;
+}
+.sa-diagram svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 .sa-mark {
   padding: 0 1px;

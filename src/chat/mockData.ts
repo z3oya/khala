@@ -601,6 +601,28 @@ export const initialSessions: Session[] = [
     ],
   },
   {
+    id: "c-mermaid",
+    title: "架构梳理 · mermaid 渲染",
+    titleOverridden: false,
+    createdAtMs: now - 42 * min,
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 40 * min,
+    messages: [
+      user(
+        "m-mer-u",
+        now - 42 * min,
+        "用 mermaid 把新的渲染扩展架构画出来,flowchart、时序、占比各一张。",
+      ),
+      reply(
+        "m-mer-r",
+        now - 40 * min,
+        "三张图讲清这套扩展机制。\n\n**组件关系**:\n\n```mermaid\nflowchart TD\n  A[ChatApp] --> S[TaskSidebar]\n  A --> M[MessageList]\n  A --> C[Composer]\n  M --> MD[Markdown]\n  MD --> EB[ExtensionBlock]\n  EB --> REG[extensions 注册表]\n  REG -.-> P[mermaid provider]\n```\n\n**渲染时序**:\n\n```mermaid\nsequenceDiagram\n  participant U as 用户\n  participant MD as Markdown\n  participant REG as 注册表\n  participant P as mermaid\n  U->>MD: 含 mermaid 代码块的回复\n  MD->>REG: lookup(lang)\n  REG-->>MD: 命中 provider\n  MD->>P: render(code, theme)\n  P-->>MD: svg\n  MD-->>U: 图表上屏\n```\n\n**代码构成**:\n\n```mermaid\npie title khala 前端代码构成\n  \"React 组件\" : 45\n  \"状态与 mock\" : 30\n  \"样式\" : 15\n  \"测试\" : 10\n```\n\n扩展是可拔插的:删掉 provider 文件与依赖后,上面三块自动退回纯文本代码块展示。",
+      ),
+    ],
+  },
+  {
     id: "c-collapsible",
     title: "折叠动画性能调优",
     titleOverridden: false,

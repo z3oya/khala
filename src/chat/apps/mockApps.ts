@@ -1,10 +1,11 @@
 /* Static demo apps; times are relative to load so timestamps stay sensible. */
-import { Braces, Clock, GitCommitHorizontal, Regex } from "lucide-react";
+import { Braces, Clock, GitCommitHorizontal, Regex, Waypoints } from "lucide-react";
 import type { KhalaApp } from "./types";
 import { RegexCookbook } from "./samples/RegexCookbook";
 import { CommitComposer } from "./samples/CommitComposer";
 import { JsonFormatter } from "./samples/JsonFormatter";
 import { ClockApp } from "./samples/ClockApp";
+import { MermaidPlayground } from "./samples/MermaidPlayground";
 
 const min = 60_000;
 const hour = 60 * min;
@@ -31,6 +32,16 @@ export const initialApps: KhalaApp[] = [
     updatedAtMs: now - 38 * min,
     size: { width: 560, height: 430 },
     sample: RegexCookbook,
+  },
+  {
+    id: "a-mermaid",
+    name: "Mermaid 画板",
+    description: "mermaid 源码实时成图,内置流程图/时序/饼图/类图预设;拔掉渲染扩展后显示未启用提示。",
+    source: "built",
+    icon: Waypoints,
+    updatedAtMs: now - 55 * min,
+    size: { width: 620, height: 560 },
+    sample: MermaidPlayground,
   },
   {
     id: "a-commit",

@@ -7,6 +7,8 @@
 import { useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
 import { useI18n } from "../i18n";
+import { fencedRegistry, resolveCodeRoute } from "../extensions/registry";
+import { ExtensionBlock } from "./ExtensionBlock";
 
 interface MarkdownProps {
   markdown: string;
@@ -81,7 +83,9 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
   );
 }
 
-type Segment = { type: "code"; lang: string; code: string } | { type: "lines"; lines: string[] };
+type Segment =
+  | { type: "code"; lang: string; code: string; closed: boolean }
+  | { type: "lines"; lines: string[] };
 
 function segment(markdown: string): Segment[] {
   const segs: Segment[] = [];
@@ -94,7 +98,7 @@ function segment(markdown: string): Segment[] {
     }
   };
   for (let i = 0; i < lines.length; i++) {
-    const fence = /^```([\w+#-]*)\s*$/.exec(lines[i]);
+    const fence = lines[i].match(/^```([\w+#-]*)\s*$/);
     if (fence) {
       flush();
       const code: string[] = [];
@@ -103,7 +107,8 @@ function segment(markdown: string): Segment[] {
         code.push(lines[i]);
         i += 1;
       }
-      segs.push({ type: "code", lang: fence[1], code: code.join("\n") });
+      /* i landed on the closing fence → closed; ran to EOF → still streaming. */
+      segs.push({ type: "code", lang: fence[1], code: code.join("\n"), closed: i < lines.length });
     } else {
       buffer.push(lines[i]);
     }
@@ -213,7 +218,12 @@ export function Markdown({ markdown, caret = false }: MarkdownProps) {
   const nodes: ReactNode[] = [];
   segs.forEach((seg, si) => {
     if (seg.type === "code") {
-      nodes.push(<CodeBlock key={`c-${si}`} lang={seg.lang} code={seg.code} />);
+      const ext = resolveCodeRoute(seg.closed, seg.lang, fencedRegistry);
+      if (ext) {
+        nodes.push(<ExtensionBlock key={`c-${si}`} ext={ext} lang={seg.lang} code={seg.code} />);
+      } else {
+        nodes.push(<CodeBlock key={`c-${si}`} lang={seg.lang} code={seg.code} />);
+      }
     } else {
       nodes.push(...renderLines(seg.lines, `l-${si}`, caret && si === lastLines));
     }
