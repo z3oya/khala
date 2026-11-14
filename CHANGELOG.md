@@ -26,6 +26,8 @@ Guidelines:
 - Sidebar: drag to reorder sessions within a project or the unfiled zone; a semi-transparent clone follows the pointer with an insertion line, and the order persists.
 - Settings gear: right-click opens a quick menu anchored above the button; Theme and Interface language expand into side flyouts.
 - Chat markdown: fenced `mermaid` blocks render as diagrams, with a diagram/source toggle and re-render on theme switch.
+- Chat markdown: LaTeX math via KaTeX — inline `$...$`, `$$` blocks and ```latex fences render as formulas; money-like text stays plain.
+- Chat markdown: fenced `plantuml` blocks render as UML diagrams — local engine, sanitized output, theme-following.
 - Apps gallery: Mermaid playground with live rendering and presets; a notice shows when the renderer is absent.
 
 ### Changed

@@ -1195,6 +1195,13 @@
   height: auto;
   display: block;
 }
+/* PlantUML keeps its default palette; khala styling rides on CSS filters. */
+.md-code[data-ext="plantuml"] .md-diagram-body svg {
+  filter: grayscale(1);
+}
+:root[data-theme="dark"] .chat-app .md-code[data-ext="plantuml"] .md-diagram-body svg {
+  filter: grayscale(1) invert(1);
+}
 .md-diagram-note {
   padding: 10px 4px;
   font-size: var(--fs-sm);
@@ -1205,6 +1212,37 @@
   padding: 8px 14px 0;
   font-size: var(--fs-xs);
   color: var(--err);
+}
+
+/* Math renders: display blocks centered, inline spans ride the text
+ * baseline; KaTeX output inherits currentColor for both themes. */
+.md-math {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 12px;
+  overflow-x: auto;
+}
+.md-math svg {
+  max-width: 100%;
+}
+.md-math-inline {
+  white-space: normal;
+}
+.md-math .katex,
+.md-math-inline .katex {
+  font-size: 1.02em;
+}
+.md-math-src {
+  margin: 0;
+  padding: 10px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-sm);
+  line-height: 1.55;
+  color: var(--text-1);
 }
 
 .stream-caret {

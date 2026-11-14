@@ -66,7 +66,7 @@ export function ExtensionBlock({ ext, lang, code }: ExtensionBlockProps) {
   const effectiveView: "render" | "source" = error ? "source" : view;
 
   return (
-    <div className="md-code" data-testid="chat-diagram-block" data-lang={lang}>
+    <div className="md-code" data-testid="chat-diagram-block" data-ext={ext.id} data-lang={lang}>
       <div className="md-code-head">
         <span className="md-code-lang">{lang || "text"}</span>
         <span className="md-diagram-actions">
@@ -96,7 +96,7 @@ export function ExtensionBlock({ ext, lang, code }: ExtensionBlockProps) {
           <div className="md-diagram-body" dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
           <div className="md-diagram-body">
-            <span className="md-diagram-note">{t("diagramLoading")}</span>
+            <span className="md-diagram-note">{t(ext.loadingKey ?? "diagramLoading")}</span>
           </div>
         )
       ) : (

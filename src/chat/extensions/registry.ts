@@ -14,13 +14,26 @@ function normalizeLang(lang: string): string {
 }
 
 export interface FencedRegistry {
-  /** Registers a extension's langs; first registration wins a lang. */
+  /** Registers an extension's langs and math claims; first wins each slot. */
   register(ext: FencedBlockExtension): void;
   lookup(lang: string): FencedBlockExtension | undefined;
+  /** Math-capability lookup by kind; undefined when nothing claims it. */
+  lookupMath(kind: "block" | "inline"): FencedBlockExtension | undefined;
 }
 
 export function createFencedRegistry(): FencedRegistry {
   const byLang = new Map<string, FencedBlockExtension>();
+  const mathOwners: Partial<Record<"block" | "inline", FencedBlockExtension>> = {};
+  const claimMath = (kind: "block" | "inline", ext: FencedBlockExtension) => {
+    const prev = mathOwners[kind];
+    if (prev) {
+      if (import.meta.env.DEV) {
+        console.warn(`[extensions] math ${kind} already claimed by "${prev.id}"; ignoring "${ext.id}"`);
+      }
+      return;
+    }
+    mathOwners[kind] = ext;
+  };
   return {
     register(ext) {
       for (const raw of ext.langs) {
@@ -35,9 +48,14 @@ export function createFencedRegistry(): FencedRegistry {
         }
         byLang.set(lang, ext);
       }
+      if (ext.math?.block) claimMath("block", ext);
+      if (ext.math?.inline) claimMath("inline", ext);
     },
     lookup(lang) {
       return byLang.get(normalizeLang(lang));
+    },
+    lookupMath(kind) {
+      return mathOwners[kind];
     },
   };
 }
@@ -51,6 +69,12 @@ export function resolveCodeRoute(
 ): FencedBlockExtension | null {
   if (!closed) return null;
   return registry.lookup(lang) ?? null;
+}
+
+/* Gate for $$ segments; unclosed runs never leave splitMathBlocks, so the
+ * segment layer only sees closed math. */
+export function resolveMathRoute(registry: FencedRegistry): FencedBlockExtension | null {
+  return registry.lookupMath("block") ?? null;
 }
 
 /** Default singleton; auto-populated from providers/*.ext.ts. */

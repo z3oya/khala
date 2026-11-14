@@ -623,6 +623,28 @@ export const initialSessions: Session[] = [
     ],
   },
   {
+    id: "c-math-puml",
+    title: "公式与建模 · katex + plantuml",
+    titleOverridden: false,
+    createdAtMs: now - 33 * min,
+    pinned: false,
+    archived: false,
+    status: "idle",
+    updatedAtMs: now - 32 * min,
+    messages: [
+      user(
+        "m-mp-u",
+        now - 33 * min,
+        "渲染矩阵和部署拓扑讲清楚:公式用 latex,结构图用 plantuml。",
+      ),
+      reply(
+        "m-mp-r",
+        now - 32 * min,
+        "三层接入一次看全。\n\n**公式**。行内形态如 $E = mc^2$ 随文走,行间块独占一段:\n\n$$\n\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\n$$\n\n围栏形态等价,适合整段公式源码:\n\n```latex\n\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}\n```\n\n**建模**。时序视角:\n\n```plantuml\n@startuml\nAlice -> Bob: Authentication Request\nBob --> Alice: Authentication Response\n\nAlice -> Bob: Another authentication Request\nAlice <-- Bob: Another authentication Response\n@enduml\n```\n\n组件视角:\n\n```plantuml\n@startuml\n[Markdown] --> [Registry]\n[Registry] --> [katex]\n[Registry] --> [plantuml]\n@enduml\n```\n\nfence、$$ 块、行内 $x$ 三个接入点自此齐备,拔掉任一 provider 都退回纯文本。",
+      ),
+    ],
+  },
+  {
     id: "c-collapsible",
     title: "折叠动画性能调优",
     titleOverridden: false,

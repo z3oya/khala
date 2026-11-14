@@ -1,12 +1,17 @@
 /* Registry + routing tests over fixture providers; the suite holds with and
  * without providers/ present because it never imports providers/*. */
 import { describe, expect, it } from "vitest";
-import { createFencedRegistry, resolveCodeRoute } from "./registry";
+import { createFencedRegistry, resolveCodeRoute, resolveMathRoute } from "./registry";
 import type { FencedBlockExtension } from "./types";
 
-const fixture = (id: string, langs: string[]): FencedBlockExtension => ({
+const fixture = (
+  id: string,
+  langs: string[],
+  math?: FencedBlockExtension["math"],
+): FencedBlockExtension => ({
   id,
   langs,
+  math,
   load: async () => {
     throw new Error("fixtures are never loaded");
   },
@@ -72,5 +77,50 @@ describe("resolveCodeRoute", () => {
     const reg = createFencedRegistry();
     reg.register(fixture("a", ["aaa"]));
     expect(resolveCodeRoute(true, "ts", reg)).toBeNull();
+  });
+});
+
+describe("math claims", () => {
+  it("looks up math capability by kind", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("a", ["aaa"], { block: true, inline: true }));
+    expect(reg.lookupMath("block")?.id).toBe("a");
+    expect(reg.lookupMath("inline")?.id).toBe("a");
+  });
+
+  it("misses when nothing claims math", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("a", ["aaa"]));
+    expect(reg.lookupMath("block")).toBeUndefined();
+    expect(reg.lookupMath("inline")).toBeUndefined();
+  });
+
+  it("first registration wins a math kind", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("first", ["aaa"], { inline: true }));
+    reg.register(fixture("second", ["bbb"], { inline: true }));
+    expect(reg.lookupMath("inline")?.id).toBe("first");
+  });
+
+  it("holds block and inline claims independently", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("a", ["aaa"], { block: true }));
+    reg.register(fixture("b", ["bbb"], { inline: true }));
+    expect(reg.lookupMath("block")?.id).toBe("a");
+    expect(reg.lookupMath("inline")?.id).toBe("b");
+  });
+});
+
+describe("resolveMathRoute", () => {
+  it("gates $$ segments on the math claim", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("a", ["aaa"], { block: true }));
+    expect(resolveMathRoute(reg)?.id).toBe("a");
+  });
+
+  it("routes to plain text when no math claim exists", () => {
+    const reg = createFencedRegistry();
+    reg.register(fixture("a", ["aaa"]));
+    expect(resolveMathRoute(reg)).toBeNull();
   });
 });
