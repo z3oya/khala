@@ -135,6 +135,10 @@ export function TaskRow({
       data-dragging={sortable?.dragging || undefined}
       data-drop-pos={sortable?.dropPos}
       onClick={() => ops.onSelect(session.id, session.unreadAtMs)}
+      onPointerDownCapture={(e) => {
+        // a drifting press would arm the row drag, which swallows the click whole
+        if (e.target instanceof Element && e.target.closest("button")) e.stopPropagation();
+      }}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return; // inner buttons own their keys
         if (e.key === "Enter" || e.key === " ") {

@@ -552,14 +552,14 @@
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   transition: opacity 150ms ease-out;
+  pointer-events: none;
 }
 .t-row.active .t-meta {
   color: var(--text-2);
 }
 .t-actions {
   display: inline-flex;
-  opacity: 0;
-  pointer-events: none; /* hidden button overlays the time — must not swallow clicks */
+  opacity: 0; /* invisible but still hit-testable */
   transition: opacity 150ms ease-out;
 }
 .t-act {
@@ -588,7 +588,6 @@
 .t-row:focus-within .t-actions,
 .t-row.confirming .t-actions {
   opacity: 1;
-  pointer-events: auto;
 }
 .t-draft {
   color: var(--text-3);
@@ -603,9 +602,6 @@
     opacity: 1;
   }
   /* Shared tail cell: keep the touch affordance, drop the time. */
-  .t-row .t-actions {
-    pointer-events: auto;
-  }
   .t-row .t-meta {
     opacity: 0;
   }

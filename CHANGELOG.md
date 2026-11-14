@@ -36,6 +36,11 @@ Guidelines:
 
 - "Show more / Show all" folding in task lists.
 
+### Fixed
+
+- Task-row tail buttons (archive, ⋯) receive clicks again; the faded-out time label no longer stacks invisibly above them.
+- Task-row buttons: a press with pointer drift no longer arms the row drag and swallows the click.
+
 ## [0.1.0] - 2026-11-08
 
 ### Added
