@@ -8,6 +8,8 @@ export interface TaskSidebarPrefs {
   expanded: Record<string, boolean>;
   order: string[];
   collapsedGroups: string[];
+  /** Collapsible zone ids in the projects view: "pinned" | "projects" | "unfiled". */
+  collapsedZones: string[];
   /** Per-scope manual task order; key = `p:{projectId}` | "unfiled" (ordering.ts). */
   taskOrder: Record<string, string[]>;
 }
@@ -19,6 +21,7 @@ const DEFAULTS: TaskSidebarPrefs = {
   expanded: {},
   order: [],
   collapsedGroups: [],
+  collapsedZones: [],
   taskOrder: {},
 };
 
@@ -56,6 +59,9 @@ function read(): TaskSidebarPrefs {
       order: Array.isArray(p.order) ? p.order.filter((v): v is string => typeof v === "string") : [],
       collapsedGroups: Array.isArray(p.collapsedGroups)
         ? p.collapsedGroups.filter((v): v is string => typeof v === "string")
+        : [],
+      collapsedZones: Array.isArray(p.collapsedZones)
+        ? p.collapsedZones.filter((v): v is string => typeof v === "string")
         : [],
       taskOrder: isTaskOrder(p.taskOrder) ? p.taskOrder : {},
     };
@@ -120,5 +126,20 @@ export function useTaskSidebarPrefs() {
     });
   }, []);
 
-  return { prefs, update, setView, setExpanded, toggleGroupCollapsed };
+  const toggleZoneCollapsed = useCallback((zone: string) => {
+    setPrefs((prev) => {
+      const collapsed = prev.collapsedZones.includes(zone)
+        ? prev.collapsedZones.filter((z) => z !== zone)
+        : [...prev.collapsedZones, zone];
+      const next = { ...prev, collapsedZones: collapsed };
+      try {
+        localStorage.setItem(KEY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
+
+  return { prefs, update, setView, setExpanded, toggleGroupCollapsed, toggleZoneCollapsed };
 }

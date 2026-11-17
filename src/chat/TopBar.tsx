@@ -1,11 +1,15 @@
 /* In-card header; chips are chat-view only. The sidebar toggle floats top-left. */
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Shield, ShieldCheck } from "lucide-react";
+import { ChevronDown, Copy, Minus, Shield, ShieldCheck, Square, X } from "lucide-react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useI18n } from "./i18n";
 import type { View } from "./types";
 
 const MODELS = ["GLM-5.3", "GLM-5.3-Air", "GLM-5.3-Flash"];
 const CTX_USAGE = 38;
+
+/* Web dev (vite only) has no Tauri runtime; controls and drag region stay inert. */
+const IS_TAURI = "__TAURI_INTERNALS__" in window;
 
 const TITLE_TESTID: Record<View, string> = {
   chat: "chat-session-title",
@@ -19,6 +23,62 @@ const TITLE_TESTID: Record<View, string> = {
 interface Props {
   view: View;
   title: string;
+}
+
+/** Frameless-window controls (- □ X); mounted only inside the Tauri shell. */
+function WindowControls() {
+  const { t } = useI18n();
+  const [maximized, setMaximized] = useState(false);
+
+  useEffect(() => {
+    const win = getCurrentWindow();
+    const sync = () => win.isMaximized().then(setMaximized).catch(() => {});
+    sync();
+    const unlisten = win.onResized(sync);
+    return () => {
+      unlisten.then((f) => f()).catch(() => {});
+    };
+  }, []);
+
+  const minimize = () => getCurrentWindow().minimize().catch(() => {});
+  const toggleMaximize = () => getCurrentWindow().toggleMaximize().catch(() => {});
+  const close = () => getCurrentWindow().close().catch(() => {});
+
+  return (
+    <div className="topbar-wincontrols" data-testid="chat-wincontrols">
+      <button
+        type="button"
+        className="win-btn"
+        data-testid="chat-win-minimize"
+        title={t("winMinimize")}
+        aria-label={t("winMinimize")}
+        onClick={minimize}
+      >
+        <Minus size={13} />
+      </button>
+      <button
+        type="button"
+        className="win-btn"
+        data-testid="chat-win-maximize"
+        data-maximized={maximized || undefined}
+        title={maximized ? t("winRestore") : t("winMaximize")}
+        aria-label={maximized ? t("winRestore") : t("winMaximize")}
+        onClick={toggleMaximize}
+      >
+        {maximized ? <Copy size={12} /> : <Square size={12} />}
+      </button>
+      <button
+        type="button"
+        className="win-btn win-btn-close"
+        data-testid="chat-win-close"
+        title={t("winClose")}
+        aria-label={t("winClose")}
+        onClick={close}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
 }
 
 export function TopBar({ view, title }: Props) {
@@ -58,13 +118,13 @@ export function TopBar({ view, title }: Props) {
   }, [modelOpen]);
 
   return (
-    <header className="chat-topbar" data-testid="chat-topbar">
-      <span className="topbar-title" data-testid={TITLE_TESTID[view]} title={title}>
+    <header className="chat-topbar" data-testid="chat-topbar" data-tauri-drag-region>
+      <span className="topbar-title" data-testid={TITLE_TESTID[view]} title={title} data-tauri-drag-region>
         {title}
       </span>
 
       {showChips && (
-        <div className="topbar-right">
+        <div className="topbar-right" data-tauri-drag-region>
           <div className="model-select" ref={menuRef}>
             <button
               type="button"
@@ -126,6 +186,8 @@ export function TopBar({ view, title }: Props) {
           </button>
         </div>
       )}
+
+      {IS_TAURI && <WindowControls />}
     </header>
   );
 }

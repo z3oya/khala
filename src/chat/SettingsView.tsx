@@ -131,6 +131,7 @@ export function SettingsSidebar({ activeId, onSelect, width, collapsed, closing 
       data-width={Math.round(collapsed ? 0 : width)}
     >
       <div className="chat-sidebar-inner" inert={closing ? true : undefined} aria-hidden={closing}>
+        <div className="sb-dragzone" data-tauri-drag-region aria-hidden="true" />
         <nav className="st-nav" aria-label={t("stNav")}>
           {SECTIONS.map((s, i) => {
             const Icon = s.icon;

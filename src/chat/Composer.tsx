@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, Paperclip, Play, Square, X } from "lucide-react";
+import { ArrowUp, FileText, Paperclip, Play, Square, X } from "lucide-react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
@@ -246,6 +246,8 @@ export function Composer({
   /* One-way flow guard: latest editor-emitted markdown; a differing value = external write. */
   const lastEmittedMarkdownRef = useRef<string | null>(null);
   const compositionEndedAtRef = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   /* ↑/↓ history browse index; -1 = not browsing. */
   const historyRef = useRef<string[]>([]);
@@ -264,6 +266,8 @@ export function Composer({
     historyRef.current = map[historyKey] ?? [];
     historyDraftRef.current = "";
     setHistoryIndex(-1);
+    /* Attachments belong to the pending input of the previous session. */
+    setAttachments([]);
   }, [historyKey]);
 
   const recordHistory = useCallback(
@@ -340,6 +344,7 @@ export function Composer({
     const text = (lastEmittedMarkdownRef.current ?? value).trim();
     if (text === "") return;
     recordHistory(text);
+    setAttachments([]);
     onSend();
     // The post-send clear must not be undoable: Ctrl+Z would resurrect the sent text
     // into parent state and re-arm the send button.
@@ -347,6 +352,21 @@ export function Composer({
       editorRef.current?.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
     });
   }, [onSend, recordHistory, value]);
+
+  const pickFiles = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  /* value reset lets re-picking the same file fire change again. */
+  const handleFilesPicked = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setAttachments((prev) => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const insertTrigger = useCallback((trigger: PromptInputTrigger) => {
     const editor = editorRef.current;
@@ -442,6 +462,42 @@ export function Composer({
         </div>
       )}
       <div className="composer" data-testid="chat-composer">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="attach-input"
+          multiple
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(e) => handleFilesPicked(e.target.files)}
+        />
+        {attachments.length > 0 && (
+          <div className="composer-attachments" data-testid="chat-attachments" data-count={attachments.length}>
+            {attachments.map((file, i) => (
+              <span
+                key={`${file.name}-${file.size}-${i}`}
+                className="chip chip-btn attach-chip"
+                data-testid="chat-attach-chip"
+                data-index={i}
+                title={file.name}
+              >
+                <FileText size={12} />
+                <span className="attach-chip-name">{file.name}</span>
+                <button
+                  type="button"
+                  className="queue-chip-x"
+                  data-testid="chat-attach-remove"
+                  data-index={i}
+                  aria-label={t("attachRemove")}
+                  title={t("attachRemove")}
+                  onClick={() => removeAttachment(i)}
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="composer-editor-wrap">
           <LexicalComposer initialConfig={initialConfig}>
             <EditorHandlePlugin editorRef={editorRef} />
@@ -484,6 +540,7 @@ export function Composer({
               data-testid="chat-attach"
               title={t("attachTitle")}
               aria-label={t("attachTitle")}
+              onClick={pickFiles}
             >
               <Paperclip size={14} />
             </button>

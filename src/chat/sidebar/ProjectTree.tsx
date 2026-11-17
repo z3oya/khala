@@ -84,6 +84,8 @@ interface Props {
   onOrderChange: (order: string[]) => void;
   taskOrder: Record<string, string[]>;
   onTaskOrderChange: (next: Record<string, string[]>) => void;
+  collapsedZones: string[];
+  onToggleZoneCollapsed: (zone: string) => void;
   setExpanded: (projectId: string, open: boolean) => void;
   ops: TaskRowOps;
   onNewTask: (projectId?: string) => void;
@@ -213,6 +215,8 @@ export function ProjectTree({
   onOrderChange,
   taskOrder,
   onTaskOrderChange,
+  collapsedZones,
+  onToggleZoneCollapsed,
   setExpanded,
   ops,
   onNewTask,
@@ -274,26 +278,51 @@ export function ProjectTree({
     { key: "delete-project", label: t("deleteProjectTitle"), danger: true, action: () => onDeleteProject(p.id) },
   ];
 
+  const pinnedOpen = !collapsedZones.includes("pinned");
+  const projectsOpen = !collapsedZones.includes("projects");
+  const unfiledOpen = !collapsedZones.includes("unfiled");
+
+  /* Zone label doubles as the collapse toggle: chevron + name. */
+  const zoneChevron = (open: boolean) => (open ? <ChevronDown size={11} /> : <ChevronRight size={11} />);
+
   return (
     <>
       {pinned.length > 0 && (
-        <div className="sb-zone" data-testid="task-pinned-zone">
-          <div className="sb-zone-label static" data-testid="task-pinned-label">
-            <span className="sb-zone-name">{t("pinned")}</span>
+        <div className="sb-zone" data-testid="task-pinned-zone" data-open={pinnedOpen}>
+          <div className="sb-zone-head">
+            <button
+              type="button"
+              className="sb-zone-label sb-zone-toggle"
+              data-testid="task-pinned-label"
+              aria-expanded={pinnedOpen}
+              onClick={() => onToggleZoneCollapsed("pinned")}
+            >
+              {zoneChevron(pinnedOpen)}
+              <span className="sb-zone-name">{t("pinned")}</span>
+            </button>
           </div>
-          <div className="sb-zone-body">
-            {pinned.map((s) => (
-              <MemoTaskRow key={s.id} session={s} ops={ops} testid="task-item-pinned" />
-            ))}
+          <div className="sb-collapse" data-open={pinnedOpen} inert={pinnedOpen ? undefined : true} aria-hidden={!pinnedOpen}>
+            <div className="sb-zone-body sb-collapse-body">
+              {pinned.map((s) => (
+                <MemoTaskRow key={s.id} session={s} ops={ops} testid="task-item-pinned" />
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="sb-zone" data-testid="task-project-zone">
+      <div className="sb-zone" data-testid="task-project-zone" data-open={projectsOpen}>
         <div className="sb-zone-head">
-          <div className="sb-zone-label static" data-testid="task-project-zone-label">
+          <button
+            type="button"
+            className="sb-zone-label sb-zone-toggle"
+            data-testid="task-project-zone-label"
+            aria-expanded={projectsOpen}
+            onClick={() => onToggleZoneCollapsed("projects")}
+          >
+            {zoneChevron(projectsOpen)}
             <span className="sb-zone-name">{t("projects")}</span>
-          </div>
+          </button>
           <button
             type="button"
             className="sb-zone-add"
@@ -305,85 +334,94 @@ export function ProjectTree({
             <Plus size={12} />
           </button>
         </div>
-        <div className="sb-zone-body">
-          {ordered.map((p) => {
-            const tasks = byProject.get(p.id) ?? [];
-            const open = expanded[p.id] !== false;
-            const unread = tasks.some((s) => s.unreadAtMs !== undefined);
-            return (
-              <div key={p.id} className="sb-project" data-testid="task-project" data-id={p.id} data-open={open}>
-                <div className="p-row" data-testid="task-project-row">
-                  <button
-                    type="button"
-                    className="p-head"
-                    data-testid="task-project-toggle"
-                    onClick={() => setExpanded(p.id, !open)}
-                    onContextMenu={(e) => ops.onCtx(e, projectMenu(p, open))}
-                    aria-expanded={open}
-                  >
-                    {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    {open ? <FolderOpen size={16} /> : <Folder size={16} />}
-                    <span className="p-name" title={p.path ? `${p.name} · ${p.path}` : p.name}>
-                      {p.name}
+        <div className="sb-collapse" data-open={projectsOpen} inert={projectsOpen ? undefined : true} aria-hidden={!projectsOpen}>
+          <div className="sb-zone-body sb-collapse-body">
+            {ordered.map((p) => {
+              const tasks = byProject.get(p.id) ?? [];
+              const open = expanded[p.id] !== false;
+              const unread = tasks.some((s) => s.unreadAtMs !== undefined);
+              return (
+                <div key={p.id} className="sb-project" data-testid="task-project" data-id={p.id} data-open={open}>
+                  <div className="p-row" data-testid="task-project-row">
+                    <button
+                      type="button"
+                      className="p-head"
+                      data-testid="task-project-toggle"
+                      onClick={() => setExpanded(p.id, !open)}
+                      onContextMenu={(e) => ops.onCtx(e, projectMenu(p, open))}
+                      aria-expanded={open}
+                    >
+                      {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      {open ? <FolderOpen size={16} /> : <Folder size={16} />}
+                      <span className="p-name" title={p.path ? `${p.name} · ${p.path}` : p.name}>
+                        {p.name}
+                      </span>
+                      {unread && <span className="dot dot-unread" data-testid="task-project-unread" />}
+                    </button>
+                    <span className="p-actions">
+                      <button
+                        type="button"
+                        className="sb-icon-mini"
+                        data-testid="task-project-more"
+                        title={t("editProject")}
+                        aria-label={t("editProject")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          ops.onCtx(e, projectMenu(p, open));
+                        }}
+                      >
+                        <Ellipsis size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="sb-icon-mini"
+                        data-testid="task-project-new"
+                        data-id={p.id}
+                        title={t("newInProjectTitle")}
+                        aria-label={`${t("newInProjectTitle")}: ${p.name}`}
+                        onClick={() => onNewTask(p.id)}
+                      >
+                        <Plus size={12} />
+                      </button>
                     </span>
-                    {unread && <span className="dot dot-unread" data-testid="task-project-unread" />}
-                  </button>
-                  <span className="p-actions">
-                    <button
-                      type="button"
-                      className="sb-icon-mini"
-                      data-testid="task-project-more"
-                      title={t("editProject")}
-                      aria-label={t("editProject")}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        ops.onCtx(e, projectMenu(p, open));
-                      }}
-                    >
-                      <Ellipsis size={13} />
-                    </button>
-                    <button
-                      type="button"
-                      className="sb-icon-mini"
-                      data-testid="task-project-new"
-                      data-id={p.id}
-                      title={t("newInProjectTitle")}
-                      aria-label={`${t("newInProjectTitle")}: ${p.name}`}
-                      onClick={() => onNewTask(p.id)}
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </span>
-                </div>
-                <div className="sb-collapse sb-collapse-tree" data-open={open} inert={open ? undefined : true} aria-hidden={!open}>
-                  {tasks.length > 0 ? (
-                    <SortableTasks
-                      scope={projectScope(p.id)}
-                      sessions={tasks}
-                      savedOrder={taskOrder[projectScope(p.id)] ?? EMPTY_ORDER}
-                      onCommit={(ids) => commitScope(projectScope(p.id), ids)}
-                      ops={ops}
-                      className="sb-collapse-inner p-tasks"
-                    />
-                  ) : (
-                    <div className="sb-collapse-inner p-tasks">
-                      <div className="p-empty" data-testid="task-project-empty">
-                        {t("newInProjectTitle")}
+                  </div>
+                  <div className="sb-collapse sb-collapse-tree" data-open={open} inert={open ? undefined : true} aria-hidden={!open}>
+                    {tasks.length > 0 ? (
+                      <SortableTasks
+                        scope={projectScope(p.id)}
+                        sessions={tasks}
+                        savedOrder={taskOrder[projectScope(p.id)] ?? EMPTY_ORDER}
+                        onCommit={(ids) => commitScope(projectScope(p.id), ids)}
+                        ops={ops}
+                        className="sb-collapse-inner p-tasks"
+                      />
+                    ) : (
+                      <div className="sb-collapse-inner p-tasks">
+                        <div className="p-empty" data-testid="task-project-empty">
+                          {t("newInProjectTitle")}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="sb-zone" data-testid="task-unfiled-zone">
+      <div className="sb-zone" data-testid="task-unfiled-zone" data-open={unfiledOpen}>
         <div className="sb-zone-head">
-          <div className="sb-zone-label static" data-testid="task-unfiled-label">
-            <span className="sb-zone-name">{t("tasks")}</span>
-          </div>
+          <button
+            type="button"
+            className="sb-zone-label sb-zone-toggle"
+            data-testid="task-unfiled-label"
+            aria-expanded={unfiledOpen}
+            onClick={() => onToggleZoneCollapsed("unfiled")}
+          >
+            {zoneChevron(unfiledOpen)}
+            <span className="sb-zone-name">{t("chats")}</span>
+          </button>
           <button
             type="button"
             className="sb-zone-add"
@@ -395,21 +433,23 @@ export function ProjectTree({
             <Plus size={12} />
           </button>
         </div>
-        <div className="sb-zone-body">
-          {unfiled.length > 0 ? (
-            <SortableTasks
-              scope={UNFILED_SCOPE}
-              sessions={unfiled}
-              savedOrder={taskOrder[UNFILED_SCOPE] ?? EMPTY_ORDER}
-              onCommit={(ids) => commitScope(UNFILED_SCOPE, ids)}
-              ops={ops}
-              testid="task-item-unfiled"
-            />
-          ) : (
-            <div className="p-empty" data-testid="task-unfiled-empty">
-              {t("newTask")}
-            </div>
-          )}
+        <div className="sb-collapse" data-open={unfiledOpen} inert={unfiledOpen ? undefined : true} aria-hidden={!unfiledOpen}>
+          <div className="sb-zone-body sb-collapse-body">
+            {unfiled.length > 0 ? (
+              <SortableTasks
+                scope={UNFILED_SCOPE}
+                sessions={unfiled}
+                savedOrder={taskOrder[UNFILED_SCOPE] ?? EMPTY_ORDER}
+                onCommit={(ids) => commitScope(UNFILED_SCOPE, ids)}
+                ops={ops}
+                testid="task-item-unfiled"
+              />
+            ) : (
+              <div className="p-empty" data-testid="task-unfiled-empty">
+                {t("newTask")}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

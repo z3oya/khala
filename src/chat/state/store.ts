@@ -14,8 +14,8 @@ export function createInitialState(showcase: boolean): SessionState {
     sessions,
     projects: initialProjects,
     groups: initialGroups,
-    draft: null,
-    selection: { kind: "session", sessionId: sessions[0].id },
+    draft: { text: "" },
+    selection: { kind: "draft" },
     activeRuns: new Set(showcase ? [SHOWCASE_SEED.session.id] : []),
     queues: showcase
       ? { [SHOWCASE_SEED.session.id]: { messages: [...SHOWCASE_SEED.queue], paused: SHOWCASE_SEED.queuePaused } }

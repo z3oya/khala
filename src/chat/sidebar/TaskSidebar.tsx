@@ -27,6 +27,7 @@ interface Props {
   setView: (view: SidebarView) => void;
   setExpanded: (projectId: string, open: boolean) => void;
   toggleGroupCollapsed: (id: string) => void;
+  toggleZoneCollapsed: (zone: string) => void;
   onSelect: (id: string, unreadAtMs?: number) => void;
   onSelectDraft: () => void;
   onNewTask: (projectId?: string, groupId?: string) => void;
@@ -67,6 +68,7 @@ export function TaskSidebar(props: Props) {
     setView,
     setExpanded,
     toggleGroupCollapsed,
+    toggleZoneCollapsed,
     onSelect,
     onSelectDraft,
     onNewTask,
@@ -150,6 +152,7 @@ export function TaskSidebar(props: Props) {
       data-width={Math.round(collapsed ? 0 : width)}
     >
       <div className="chat-sidebar-inner">
+        <div className="sb-dragzone" data-tauri-drag-region aria-hidden="true" />
         <nav className="sb-nav" data-testid="task-nav">
           <button type="button" className="sb-nav-new" data-testid="task-nav-new" onClick={() => onNewTask()}>
             <Plus size={18} />
@@ -205,7 +208,7 @@ export function TaskSidebar(props: Props) {
 
         <div className="sb-head">
           <span className="sb-head-title" data-testid="task-head-title">
-            {t("tasks")}
+            {t("sessions")}
           </span>
           <div className="sb-head-actions">
             <button
@@ -266,6 +269,8 @@ export function TaskSidebar(props: Props) {
               onOrderChange={(order) => onPrefsChange({ order })}
               taskOrder={prefs.taskOrder}
               onTaskOrderChange={(taskOrder) => onPrefsChange({ taskOrder })}
+              collapsedZones={prefs.collapsedZones}
+              onToggleZoneCollapsed={toggleZoneCollapsed}
               setExpanded={setExpanded}
               ops={ops}
               onNewTask={(projectId) => onNewTask(projectId)}

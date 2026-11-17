@@ -161,8 +161,15 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: calc(var(--card-inset) + var(--card-border-w) + var(--topbar-h) + 8px) 12px 0; /* clears the toggle band + 8px gap */
+  padding: 0 12px;
   user-select: none;
+}
+/* Top band clearing the floating toggle; doubles as the frameless-window
+ * drag region over the sidebar column. */
+.sb-dragzone {
+  flex: none;
+  height: calc(var(--card-inset) + var(--card-border-w) + var(--topbar-h) + 8px);
+  margin: 0 -12px; /* bleed to the sidebar's window-side edges */
 }
 
 /* Logo morph toggle: the mark rests; hover/focus crossfades to PanelLeft. */
@@ -272,7 +279,7 @@
   overflow-x: hidden; /* drag transforms must not open horizontal scroll */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px; /* single source of inter-zone spacing (zones are direct children) */
   padding-bottom: 8px;
 }
 .sb-scroll[data-scroll-mask="top"] {
@@ -291,9 +298,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-.sb-zone + .sb-zone {
-  margin-top: 10px;
 }
 .sb-zone-head {
   display: flex;
@@ -336,6 +340,31 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+}
+/* Zone label as collapse toggle: button reset on top of sb-zone-label;
+   chevron + name (same skin as group heads). */
+.sb-zone-toggle {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  line-height: inherit;
+  justify-content: flex-start;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+.sb-zone-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+  border-radius: var(--r-sm);
+}
+.sb-zone-toggle svg {
+  flex: none;
+}
+/* Inner half of a collapsible zone body (sb-collapse 0fr trick). */
+.sb-collapse-body {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sb-collapse {
@@ -690,9 +719,11 @@
   bottom: 0;
 }
 
+/* flex-start: buttons default to justify-content:center in the UA sheet. */
 .grp-head {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   width: 100%;
   height: 28px;
@@ -713,8 +744,9 @@
   flex: none;
   font-weight: 600;
 }
+/* The count badge sits right after the name, left-aligned like the zone
+   heads; the button itself still spans the row. */
 .grp-name {
-  flex: 1;
   min-width: 0;
   text-align: left;
   overflow: hidden;
@@ -915,6 +947,35 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+/* Frameless-window controls (Tauri only); sit at the topbar's right end. */
+.topbar-wincontrols {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  /* right-aligned standalone when the chat chips row is absent */
+  margin-left: auto;
+}
+.chat-topbar .topbar-right + .topbar-wincontrols {
+  margin-left: 0; /* chips already pushed right; keep the pair adjacent */
+}
+.win-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.win-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.win-btn-close:hover {
+  background: var(--err);
+  color: #fff;
 }
 
 .chip {
@@ -1674,6 +1735,26 @@
 }
 .composer:focus-within {
   border-color: var(--border-focus);
+}
+/* Attachments picked via chat-attach; same chip skin as the hint row,
+   laid above the editor inside the composer card. */
+.composer-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px 0;
+}
+.attach-chip {
+  max-width: 100%;
+}
+.attach-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+.attach-input {
+  display: none;
 }
 .composer-editor-wrap {
   position: relative;
@@ -2584,14 +2665,13 @@
   scrollbar-color: var(--border-strong) transparent;
 }
 
-/* Hover-revealed thumb; thin width keeps the gutter reserved. */
+/* Sessions list: no visible scrollbar; the top/bottom fade masks mark the
+ * scrollable ends, wheel/touch still scrolls. */
 .sb-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  transition: scrollbar-color 160ms ease;
+  scrollbar-width: none;
 }
-.sb-scroll:hover {
-  scrollbar-color: var(--border-strong) transparent;
+.sb-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .visually-hidden {

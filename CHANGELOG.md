@@ -18,7 +18,7 @@ Guidelines:
 
 ### Added
 
--Appearance (light / dark / follow system);
+- Appearance (light / dark / follow system).
 - `?mock=showcase`: sample session covering every message-block type.
 - `?shot=1`: disables animations and transitions for deterministic screenshots.
 - `?settings=<section>`: deep-links straight to a settings section.
@@ -29,13 +29,18 @@ Guidelines:
 - Chat markdown: LaTeX math via KaTeX — inline `$...$`, `$$` blocks and ```latex fences render as formulas; money-like text stays plain.
 - Chat markdown: fenced `plantuml` blocks render as UML diagrams — local engine, sanitized output, theme-following.
 - Apps gallery: Mermaid playground with live rendering and presets; a notice shows when the renderer is absent.
+- Frameless main window: the title bar and the sidebar top band drag the window; minimize / maximize / close controls sit at the title bar's right end (Tauri builds).
+- Composer: the attach button opens a file picker; picked files show as chips above the input, removable one by one, and clear on send or session switch.
+- Sidebar projects view: the Pinned / Projects / Chats zone headers collapse on click; the state persists.
 
 ### Changed
 
 - `?mock=` accepts comma-combined values.
-
+- Startup opens the New Task draft.
+- Sidebar header reads "Sessions"; the unfiled zone header reads "Chats".
+- Sidebar session list: no visible scrollbar; the top/bottom fade masks mark the scrollable ends.
+- Group heads: the count badge sits right after the name, left-aligned.
 - Sidebar session rows: the relative time and the archive button now share one right-edge slot, swapping in place on hover/focus (touch shows only the button).
-- Sidebar session list: the scrollbar thumb shows only while the pointer is over the list.
 
 ### Removed
 

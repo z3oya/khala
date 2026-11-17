@@ -77,7 +77,8 @@ function ChatShell() {
     deleteProject,
     toggleProjectPin,
   } = useMockChat();
-  const { prefs, update, setView: setSidebarView, setExpanded, toggleGroupCollapsed } = useTaskSidebarPrefs();
+  const { prefs, update, setView: setSidebarView, setExpanded, toggleGroupCollapsed, toggleZoneCollapsed } =
+    useTaskSidebarPrefs();
   const theme = useTheme();
   const [view, setView] = useState<View>(INITIAL_VIEW);
   const [settingsSection, setSettingsSection] = useState(INITIAL_SECTION);
@@ -172,6 +173,7 @@ function ChatShell() {
     setView: setSidebarView,
     setExpanded,
     toggleGroupCollapsed,
+    toggleZoneCollapsed,
     onSelect: (id: string, unreadAtMs?: number) => {
       selectSession(id, unreadAtMs);
       setView("chat");
@@ -217,6 +219,7 @@ function ChatShell() {
     <div
       className={`chat-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
       data-testid="chat-root"
+      data-tauri-drag-region
       data-theme={theme.resolved}
       data-shot={SHOT || undefined}
       data-view={view}
