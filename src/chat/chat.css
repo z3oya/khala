@@ -363,9 +363,6 @@
 .p-tasks {
   min-height: 0;
   overflow: hidden;
-  margin-left: 15px;
-  border-left: 1px solid var(--border);
-  padding-left: 6px;
   display: flex;
   flex-direction: column;
   gap: 1px;
