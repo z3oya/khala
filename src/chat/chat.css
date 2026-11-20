@@ -2819,3 +2819,78 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
+
+/* ── grok-bot-mark ── */
+
+.grok-bot-mark {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.grok-bot-mark > svg,
+.grok-bot-mark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* color 渐变背板（GrokBotMark color prop 渐变停在 span 上）。 */
+.grok-bot-mark--backdrop {
+  border-radius: 50%;
+}
+
+/* MarkShowcaseApp 布局（沿用 sa- 体系的行/标签/按钮，仅补布局类）。 */
+.mark-showcase-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.mark-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+.mark-showcase-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+}
+.mark-showcase-cell-label {
+  font-size: 11px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.mark-showcase-dot {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}
+.mark-showcase-dot.active {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.mark-showcase-select {
+  width: auto;
+  min-width: 110px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+}
+.mark-showcase-seed {
+  width: 130px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+}

@@ -1,11 +1,12 @@
 /* Static demo apps; times are relative to load so timestamps stay sensible. */
-import { Braces, Clock, GitCommitHorizontal, Regex, Waypoints } from "lucide-react";
+import { Bot, Braces, Clock, GitCommitHorizontal, Regex, Waypoints } from "lucide-react";
 import type { KhalaApp } from "./types";
 import { RegexCookbook } from "./samples/RegexCookbook";
 import { CommitComposer } from "./samples/CommitComposer";
 import { JsonFormatter } from "./samples/JsonFormatter";
 import { ClockApp } from "./samples/ClockApp";
 import { MermaidPlayground } from "./samples/MermaidPlayground";
+import { MarkShowcaseApp } from "./samples/MarkShowcaseApp";
 
 const min = 60_000;
 const hour = 60 * min;
@@ -13,6 +14,16 @@ const day = 24 * hour;
 const now = Date.now();
 
 export const initialApps: KhalaApp[] = [
+  {
+    id: "a-mark",
+    name: "Grok Bot Mark",
+    description: "grok-bot-mark 1:1 移植展示：53 状态/25 形状/表情与眨眼/注视跟随/戳动。",
+    source: "built",
+    icon: Bot,
+    updatedAtMs: now - 5 * min,
+    size: { width: 720, height: 600 },
+    sample: MarkShowcaseApp,
+  },
   {
     id: "a-clock",
     name: "时钟",

@@ -74,6 +74,10 @@
   --fs-xs: 12px;
   --fs-mono: 13px;
   --fs-mono-sm: 12.5px;
+
+  /* grok-bot-mark: engine ink/eye paint defaults (showcase + inline marks). */
+  --grok-bot-ink: var(--ink);
+  --grok-bot-eye: #fff;
 }
 
 /*
