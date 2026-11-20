@@ -63,4 +63,25 @@ describe("buildHostProps mapping", () => {
     expect(h.isFollowingPointer).toBe(true);
     expect(h.state).toBe("working");
   });
+
+  it("preset=wechat → bubble body, brand green ink, white filled eyes; explicit props win", () => {
+    const h = buildHostProps({ preset: "wechat" }, "i");
+    expect(h.body).toBe("bubble");
+    expect(h.appearance.inkPaint).toBe("#07C160");
+    expect(h.appearance.spotPaint).toBe("#FFFFFF");
+    expect(h.appearance.cutout).toBe(false);
+    const override = buildHostProps({ preset: "wechat", shape: "blob", ink: "red", eyeColor: "black" }, "i");
+    expect(override.body).toBe("sphere");
+    expect(override.appearance.inkPaint).toBe("red");
+    expect(override.appearance.cutout).toBe(false);
+  });
+
+  it("color paints the engine body (ink precedence: ink > color > preset > var)", () => {
+    expect(buildHostProps({ color: "green" }, "i").appearance.inkPaint).toBe("#00C972");
+    expect(buildHostProps({ color: "green", ink: "red" }, "i").appearance.inkPaint).toBe("red");
+    expect(
+      buildHostProps({ color: "red", preset: "wechat" }, "i").appearance.inkPaint,
+    ).toBe("#FF263C"); // color beats the preset ink; preset still fills the eyes white
+    expect(buildHostProps({}, "i").appearance.inkPaint).toBe("var(--grok-bot-ink)");
+  });
 });

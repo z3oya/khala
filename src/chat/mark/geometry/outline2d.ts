@@ -227,6 +227,24 @@ function starFlowerOutline(): string {
   return catmullClosed(starFlowerRing().map((p): [number, number] => [L + p.x * L, L - p.y * L]));
 }
 
+// wechat extension (docs/wechat-bot-mark-design.md): speech bubble — ellipse plus a
+// small lower-left tail; the 25° arc gap between the two base points is closed by the horn.
+export function bubbleShape(): string {
+  const cx = L + 6;
+  const cy = L - 4;
+  const rx = 96;
+  const ry = 84;
+  const at = (a: number): [number, number] => [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry];
+  const a0 = Math.PI * 0.86;
+  const a1 = Math.PI * 0.72;
+  const tip: [number, number] = [L - 97, L + 78];
+  return new PathBuilder()
+    .move(at(a0)[0], at(a0)[1])
+    .arc(cx, cy, rx, ry, a0, a1 + Math.PI * 2)
+    .corner(at(a1), tip, at(a0), 7)
+    .close();
+}
+
 // 2D outline registry for the 26 shapes (the heart key is heartChubby)
 export const OUTLINE_BUILDERS: Record<BodyId, () => PathBuilder | string> = {
   pebble: () => harmonicBlob(108, 0.075, 1.1),
@@ -262,4 +280,5 @@ export const OUTLINE_BUILDERS: Record<BodyId, () => PathBuilder | string> = {
   crystal: () => crystalOutline(),
   sphere: () => circleOutline(),
   pumpkin: () => circleOutline(),
+  bubble: () => bubbleShape(),
 };

@@ -5,7 +5,6 @@ import { useRef, useState } from "react";
 import { GrokBotMark } from "../../mark/GrokBotMark";
 import type { MarkHandle } from "../../mark/GrokBotMark";
 import type { ColorId, MarkState, ShapeId } from "../../mark/types";
-import { pickerToBody } from "../../mark/identity/shapes";
 import { pickablePalette } from "../../mark/identity/palette";
 import { PICKER_SHAPES, STATES } from "../../mark/data/shapes.generated";
 
@@ -14,6 +13,21 @@ const GRID_STATES: MarkState[] = [
   "blocked", "sleeping", "celebrate", "logo",
 ];
 const GRID_SHAPES: ShapeId[] = PICKER_SHAPES.slice(0, 10);
+
+/** Shape picker groups: original vocab first, extensions last. */
+const SHAPE_GROUPS: { group: string; shapes: ShapeId[] }[] = [
+  { group: "原版形体", shapes: PICKER_SHAPES },
+  { group: "扩展", shapes: ["bubble"] },
+];
+
+const SHAPE_ZH: Partial<Record<ShapeId, string>> = {
+  blob: "水滴", pebble: "鹅卵石", bean: "豆子", egg: "蛋", squircle: "方圆",
+  tablet: "平板", capsule: "胶囊", cylinder: "圆柱", hex: "六边形", gem: "宝石",
+  crystal: "水晶", wedge: "楔子", shield: "盾牌", dome: "穹顶", arch: "拱门",
+  cloud: "云朵", teardrop: "泪滴", leaf: "叶子", square: "方形", sparkle: "四角星",
+  clover: "四叶草", flower: "花朵", heart: "爱心", house: "小屋", star: "星形",
+  pumpkin: "南瓜", bubble: "对话气泡",
+};
 
 const LOOK_BUTTONS: { label: string; dir: "left" | "right" | "up" | "down" }[] = [
   { label: "look-left", dir: "left" },
@@ -32,6 +46,10 @@ export function MarkShowcaseApp() {
   const [isFollowingPointer, setFollowingPointer] = useState(true);
   const markRef = useRef<MarkHandle | null>(null);
 
+  // "bubble" (wechat) is a sibling shape; the brand look (green body, white eyes)
+  // comes from the preset unless a palette dot overrides the ink.
+  const isWechat = shape === "bubble";
+
   return (
     <div className="sa-root" data-testid="chat-sample-app" data-sample="mark">
       <div className="mark-showcase-stage">
@@ -40,6 +58,7 @@ export function MarkShowcaseApp() {
           ref={markRef}
           state={state}
           shape={shape}
+          preset={isWechat ? "wechat" : undefined}
           color={color ?? undefined}
           sourceId={sourceId}
           sizePx={160}
@@ -68,8 +87,15 @@ export function MarkShowcaseApp() {
           value={shape}
           onChange={(e) => setShape(e.target.value as ShapeId)}
         >
-          {PICKER_SHAPES.map((s) => (
-            <option key={s} value={s}>{s} → {pickerToBody(s)}</option>
+          {SHAPE_GROUPS.map(({ group, shapes }) => (
+            <optgroup key={group} label={group}>
+              {shapes.map((s) => (
+                <option key={s} value={s}>
+                  {SHAPE_ZH[s]} {s}
+                  {s === "bubble" ? "（微信）" : ""}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <label className="sa-label" htmlFor="sa-mark-seed">seed</label>
@@ -129,8 +155,20 @@ export function MarkShowcaseApp() {
         <button className="cbtn cbtn-ghost sa-btn" onClick={() => markRef.current?.blink()}>
           blink
         </button>
+        {/* look() only sustains while the clip is not re-sampling the pose
+            (engine de() clears the look anim every frame while playing),
+            so clicking a look button parks the mark in the paused state first. */}
         {LOOK_BUTTONS.map(({ label, dir }) => (
-          <button key={label} className="cbtn cbtn-ghost sa-btn" onClick={() => markRef.current?.look(dir)}>
+          <button
+            key={label}
+            className="cbtn cbtn-ghost sa-btn"
+            title="暂停态生效：自动暂停后保持朝向"
+            onClick={() => {
+              markRef.current?.setPlaying(false);
+              setPaused(true);
+              markRef.current?.look(dir);
+            }}
+          >
             {label}
           </button>
         ))}

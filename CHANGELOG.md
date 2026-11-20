@@ -19,6 +19,7 @@ Guidelines:
 ### Added
 
 - Chat avatars: the Grok Bot mark engine ported 1:1 as a TS/SVG component — 53 states, 25 body shapes, 11 colors, 9 expressions with blinks, cursor-following gaze, spin/nod/bounce reactions, and deterministic per-agent identity from an id seed.
+- Chat avatars: a WeChat-style preset (`<GrokBotMark preset="wechat">`) — single green speech bubble (#07C160) with white oval eyes, running on the same state engine.
 - Apps gallery: "Grok Bot Mark" showcase — state/shape/color/seed pickers, poke/blink/look controls, cursor tracking, and live state & shape grids.
 - Appearance (light / dark / follow system).
 - `?mock=showcase`: sample session covering every message-block type.

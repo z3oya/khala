@@ -6,19 +6,20 @@
 
 // ── Vocabularies ────────────────────────────────────────────────
 
-/** Engine body ids (26; pumpkin is stubbed to sphere). */
+/** Engine body ids (26 original; pumpkin stubbed to sphere; "bubble" = wechat extension). */
 export type BodyId =
   | "sphere" | "cloud" | "square" | "sparkle" | "clover" | "heartChubby"
   | "starFlower" | "teardrop" | "tablet" | "wedge" | "house" | "star6"
   | "pebble" | "bean" | "egg" | "squircle" | "capsule" | "cylinder"
-  | "hex" | "gem" | "crystal" | "shield" | "dome" | "arch" | "leaf" | "pumpkin";
+  | "hex" | "gem" | "crystal" | "shield" | "dome" | "arch" | "leaf" | "pumpkin"
+  | "bubble";
 
-/** Picker shape ids (25+pumpkin; mapped to BodyId via pickerToBody). */
+/** Picker shape ids (original vocab + "bubble" wechat extension; mapped to BodyId via pickerToBody). */
 export type ShapeId =
   | "blob" | "pebble" | "bean" | "egg" | "squircle" | "tablet" | "capsule"
   | "cylinder" | "hex" | "gem" | "crystal" | "wedge" | "shield" | "dome"
   | "arch" | "cloud" | "teardrop" | "leaf" | "square" | "sparkle" | "clover"
-  | "flower" | "heart" | "house" | "star" | "pumpkin";
+  | "flower" | "heart" | "house" | "star" | "pumpkin" | "bubble";
 
 export type ColorId =
   | "black" | "brown" | "red" | "orange" | "yellow" | "green"

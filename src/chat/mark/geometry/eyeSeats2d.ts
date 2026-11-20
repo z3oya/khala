@@ -4,6 +4,13 @@
 import type { BodyId, EyeShape } from "../types";
 import { STATIC_EYE_SEATS } from "../data/shapes.generated";
 
+// wechat extension (docs/wechat-bot-mark-design.md): wider eye spacing; offX/offY re-centers
+// the eyes on the ellipse (the tail pulls the outline bbox toward the lower-left);
+// values calibrated against the normalized outline in wechat.test.ts.
+const EXTENSION_EYE_SEATS: Partial<Record<BodyId, EyeSeatMetrics>> = {
+  bubble: { width: 0.235, height: 0.525, gap: 0.5, shiftY: 0, offX: 0.0242, offY: 0.0141 },
+};
+
 const EYE_WIDTH_REF = 0.26;
 const EYE_HEIGHT_REF = 0.57;
 const EYE_GAP_REF = 0.64;
@@ -29,6 +36,9 @@ export interface EyeSeatMetrics {
   height: number;
   gap: number;
   shiftY: number;
+  /** Extension hook: extra eye-group offset in loop units, for outlines whose bbox center drifts from the body center (e.g. the bubble tail). */
+  offX?: number;
+  offY?: number;
 }
 
 export interface EyeLayout {
@@ -355,12 +365,17 @@ export function unitScaleLoops(eyes: readonly EyeShape[]): Pt[][] {
 }
 
 export function layoutEyes(body: Exclude<BodyId, "sphere" | "pumpkin">, eyes: readonly EyeShape[]): EyeLayout {
-  const seat = STATIC_EYE_SEATS[body] as EyeSeatMetrics;
+  const seat = (STATIC_EYE_SEATS[body] ?? EXTENSION_EYE_SEATS[body]) as EyeSeatMetrics;
   const wScale = seat.width / EYE_WIDTH_REF;
   const hScale = seat.height / EYE_HEIGHT_REF;
   const gScale = seat.gap / EYE_GAP_REF;
   const raw = eyes.every((e) => isOvalEye(e) && !(e.fillRing != null && e.fillRing.length > 0))
     ? stadiumPair(eyeApprox(eyes[0]!), eyeApprox(eyes[1]!), seat, wScale, hScale, gScale)
     : { loops: generalLoops(eyes, wScale, gScale, hScale, 0, seat.shiftY), shiftY: 0 };
-  return { loops: raw.loops.map((l) => l.map((p): [number, number] => [p.x, p.y])), shiftY: raw.shiftY };
+  const dx = seat.offX ?? 0;
+  const dy = seat.offY ?? 0;
+  return {
+    loops: raw.loops.map((l) => l.map((p): [number, number] => [p.x + dx, p.y + dy])),
+    shiftY: raw.shiftY,
+  };
 }

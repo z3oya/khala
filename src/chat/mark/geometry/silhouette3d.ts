@@ -841,6 +841,8 @@ export const SILHOUETTES: Record<BodyId, () => BodyGeom> = {
   sphere: () => sphereGeom(),
   // §0.4 trim: pumpkin → sphere stub (equivalent solid)
   pumpkin: () => sphereGeom(),
+  // wechat extension (docs/wechat-bot-mark-design.md)
+  bubble: () => extrusion(1.21, samplesFromOutline(resampleBody(`bubble`))),
 };
 
 const silhouetteCache = new Map<BodyId, BodyGeom>();

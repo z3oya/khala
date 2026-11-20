@@ -110,7 +110,7 @@ describe("silhouette3d (cc table)", () => {
     }
   });
 
-  it("SILHOUETTES covers all 26 BodyIds", () => {
-    expect(Object.keys(SILHOUETTES).length).toBe(26);
+  it("SILHOUETTES covers all 26 original BodyIds + the wechat bubble extension", () => {
+    expect(Object.keys(SILHOUETTES).length).toBe(27);
   });
 });

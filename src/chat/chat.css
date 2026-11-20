@@ -2833,10 +2833,6 @@
   height: 100%;
   display: block;
 }
-/* color 渐变背板（GrokBotMark color prop 渐变停在 span 上）。 */
-.grok-bot-mark--backdrop {
-  border-radius: 50%;
-}
 
 /* MarkShowcaseApp 布局（沿用 sa- 体系的行/标签/按钮，仅补布局类）。 */
 .mark-showcase-stage {

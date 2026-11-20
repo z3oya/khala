@@ -1,7 +1,7 @@
 /**
  * GrokBotMark — React wrapper (props surface aligned with the original hT).
- * The props → MarkHostProps mapping is kept in the pure function buildHostProps (testable without DOM);
- * color only affects the outer span's CSS gradient backdrop and never reaches the engine.
+ * The props → MarkHostProps mapping is kept in the pure function buildHostProps (testable without DOM).
+ * color paints the engine body; ink (explicit engine color) wins over it.
  */
 import { useEffect, useId, useImperativeHandle, useMemo, useRef } from "react";
 import type { CSSProperties, ReactNode, Ref } from "react";
@@ -16,12 +16,17 @@ import type {
   Vec2,
 } from "./types";
 import { pickerToBody } from "./identity/shapes";
-import { gradientFor } from "./identity/palette";
+import { paletteHex } from "./identity/palette";
 import { useMarkHost } from "./useMarkHost";
 
+export type MarkPreset = "wechat";
+
 export interface GrokBotMarkProps {
+  /** Palette id painting the engine body. */
   color?: ColorId;
   shape?: ShapeId;
+  /** Brand preset: "wechat" → single green speech bubble, white oval eyes (docs/wechat-bot-mark-design.md). Explicit shape/ink/eyeColor still win. */
+  preset?: MarkPreset;
   /** Stable source id (agent session id etc.): used as the host seed and decides the director schedule. */
   sourceId?: string;
   state?: MarkState;
@@ -52,6 +57,7 @@ export interface MarkHandle {
   look(d: LookDir): void;
   restart(): void;
   setExpression(f: FaceName, o?: { isThroughBlink?: boolean }): void;
+  setPlaying(v: boolean): void;
 }
 
 /** Fallback edge length when both sizePx/sizeCss are absent. */
@@ -66,15 +72,26 @@ function parseSizeCss(css: string | undefined): number | "fill" {
   return Number.isFinite(n) ? n : "fill";
 }
 
-/** GrokBotMarkProps → MarkHostProps (pure function, shared by the component and tests). */
+/** Per-preset defaults; explicit props override (docs/wechat-bot-mark-design.md). */
+const PRESETS: Record<MarkPreset, { shape: ShapeId; ink: string; eyeColor: string }> = {
+  wechat: { shape: "bubble", ink: "#07C160", eyeColor: "#FFFFFF" },
+};
+
+/**
+ * GrokBotMarkProps → MarkHostProps (pure function, shared by the component and tests).
+ * Ink precedence: explicit ink > color (palette) > preset > --grok-bot-ink.
+ */
 export function buildHostProps(props: GrokBotMarkProps, instanceId: string): MarkHostProps {
+  const preset = props.preset != null ? PRESETS[props.preset] : null;
+  const ink =
+    props.ink ?? (props.color != null ? paletteHex(props.color) : preset?.ink ?? "var(--grok-bot-ink)");
   return {
     id: instanceId,
-    body: pickerToBody(props.shape ?? "blob"),
+    body: pickerToBody(props.shape ?? preset?.shape ?? "blob"),
     appearance: {
-      inkPaint: props.ink ?? "var(--grok-bot-ink)",
-      spotPaint: props.eyeColor ?? null,
-      cutout: props.eyeColor == null,
+      inkPaint: ink,
+      spotPaint: props.eyeColor ?? preset?.eyeColor ?? null,
+      cutout: props.eyeColor == null && preset?.eyeColor == null,
     },
     state: props.state ?? "idle",
     size: props.sizePx ?? parseSizeCss(props.sizeCss),
@@ -95,6 +112,8 @@ export function GrokBotMark(props: GrokBotMarkProps) {
     [
       instanceId,
       props.shape,
+      props.preset,
+      props.color,
       props.ink,
       props.eyeColor,
       props.state,
@@ -126,6 +145,7 @@ export function GrokBotMark(props: GrokBotMarkProps) {
       look: (d) => host.look(d),
       restart: () => host.restart(),
       setExpression: (f, o) => host.setExpression(f, o),
+      setPlaying: (v) => host.setPlaying(v),
     }),
     [host],
   );
@@ -138,17 +158,12 @@ export function GrokBotMark(props: GrokBotMarkProps) {
         : props.sizeCss != null
           ? { width: props.sizeCss, height: props.sizeCss }
           : { width: DEFAULT_MARK_SIZE_PX, height: DEFAULT_MARK_SIZE_PX };
-  const gradient = props.color != null ? gradientFor(props.color) : null;
   const style: CSSProperties = {
     ...sizeStyle,
-    ...(gradient
-      ? { background: `linear-gradient(${gradient.angle}deg, ${gradient.from}, ${gradient.to})` }
-      : null),
     ...props.style,
   };
   const className =
-    `grok-bot-mark${props.color != null ? " grok-bot-mark--backdrop" : ""}` +
-    (props.className != null ? ` ${props.className}` : "");
+    `grok-bot-mark` + (props.className != null ? ` ${props.className}` : "");
 
   return (
     <span
